@@ -1,0 +1,39 @@
+.timetable-container {
+    padding: 20px;
+    text-align: center;
+}
+
+.timetable-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.timetable-table th,
+.timetable-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    vertical-align: top;
+    text-align: left;
+}
+
+.timetable-table th {
+    background-color: #f4f4f4;
+}
+
+/* Pills (subject boxes) */
+.subject-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.subject-pill {
+    background-color: #e0f2fe;
+    color: #0369a1;
+    padding: 4px 8px;
+    font-size: 0.875rem;
+    border-radius: 9999px;
+    border: 1px solid #bae6fd;
+    white-space: nowrap;
+}

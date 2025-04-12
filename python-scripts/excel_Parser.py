@@ -3,6 +3,11 @@ import json
 import pandas as pd
 from sortedcontainers import SortedDict, SortedSet
 
+# ✅ Add default config values here
+NUMBER_OF_DAYS = 9
+NUMBER_OF_SLOTS = 3
+MAX_STRENGTH_PER_SLOT = 100
+
 def parse_excel(file_path):
     df = pd.read_excel(file_path, engine="openpyxl")
 
@@ -43,14 +48,15 @@ def parse_excel(file_path):
         for student in courses_student[i]:
             for j in range(i + 1, len(courses)):
                 if student in courses_student[j]:
-                    if i > j:
-                        graph_edges.add((j, i))
-                    else:
-                        graph_edges.add((i, j))
+                    graph_edges.add((min(i, j), max(i, j), 1))  # Use weight 1
 
+    # ✅ Final formatted result
     result = {
-        "num_courses": len(courses),
-        "num_edges": len(graph_edges),
+        "numberOfDays": NUMBER_OF_DAYS,
+        "numberOfSlots": NUMBER_OF_SLOTS,
+        "maxStrengthPerSlot": MAX_STRENGTH_PER_SLOT,
+        "numberOfCourses": len(courses),
+        "numberOfEdges": len(graph_edges),
         "edges": list(graph_edges),
         "courses": {column: {"id": i, "size": course_size[i]} for column, i in courses.items()},
         "students": {student: {"id": i, "courses": list(student_courses[i])} for student, i in students.items()}
@@ -66,5 +72,5 @@ if __name__ == "__main__":
         f.write(input_file)
 
     result = parse_excel(temp_file)
-    
-    print(json.dumps(result))
+
+    print(json.dumps({ "adjacencyGraph": result }))

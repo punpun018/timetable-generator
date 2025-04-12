@@ -9,3 +9,6 @@ uploads/
 
 # Ignore environment files
 .env
+
+
+*.xlsx

@@ -1,0 +1,140 @@
+/* Overall layout */
+.home-container {
+    background-color: #ffffff;
+    color: #000000;
+    min-height: 100vh;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header with logo */
+.header {
+    background-color: #fff;
+    /* red background */
+    display: flex;
+    justify-content: flex-start;
+    /* aligns content to the left */
+    align-items: center;
+    padding: 10px 30px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+
+.logo-container {
+    height: 60px;
+}
+
+.logo {
+    height: 60px;
+    width: auto;
+}
+
+/* Body content */
+.body {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+/* Dropzone */
+.dropzone {
+    border: 2px dashed #d32f2f;
+    padding: 20px;
+    margin: 20px auto;
+    width: 50%;
+    cursor: pointer;
+    background-color: #fff0f0;
+    color: #d32f2f;
+    transition: 0.3s ease;
+}
+
+.dropzone:hover {
+    background-color: #ffeaea;
+}
+
+.file-name {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #d32f2f;
+}
+
+/* Options */
+.options {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0;
+    gap: 10px;
+}
+
+.options label {
+    min-width: 150px;
+    text-align: right;
+    font-weight: 600;
+}
+
+input,
+select {
+    padding: 6px 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* Button */
+.generate-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 18px;
+    background-color: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.generate-btn:hover {
+    background-color: #b71c1c;
+}
+
+.body {
+    text-align: center;
+    padding: 60px 20px;
+    background-image: url('/lnmiitbackground.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-height: calc(100vh - 80px);
+    /* assuming header is ~80px */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+/* Optional overlay for readability */
+.body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.4);
+    /* white transparent overlay */
+    z-index: 0;
+}
+
+.body>* {
+    z-index: 1;
+    /* put content above overlay */
+}
+
+.footer {
+    background-color: #d32f2f;
+    color: white;
+    text-align: center;
+    padding: 15px 0;
+    font-weight: bold;
+    font-size: 16px;
+    border-top: 2px solid #b71c1c;
+}

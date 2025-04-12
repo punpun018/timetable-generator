@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "algorithm": "cpp",
+        "concepts": "cpp",
+        "filesystem": "cpp",
+        "functional": "cpp",
+        "memory": "cpp",
+        "ranges": "cpp",
+        "span": "cpp",
+        "xmemory": "cpp",
+        "xstring": "cpp",
+        "xutility": "cpp"
+    }
+}

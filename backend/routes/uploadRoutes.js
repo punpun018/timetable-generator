@@ -1,6 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const { runPython } = require("../utils/runPython");
+const runCppWithJson = require("../utils/runCpp"); // <--- add this
 
 const router = express.Router();
 
@@ -14,15 +15,29 @@ router.post("/", upload.single("file"), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
     try {
-        // Run Python script to parse the Excel file
+        const { days, slots, strength } = req.body;
+
+        // Step 1: Run Python to get adjacencyGraph
         const adjacencyGraph = await runPython(req.file.buffer);
-        console.log(`Successfully processed file: ${req.file.originalname}`);
+        adjacencyGraph.adjacencyGraph.numberOfDays = parseInt(days);
+        adjacencyGraph.adjacencyGraph.numberOfSlots = parseInt(slots);
+        adjacencyGraph.adjacencyGraph.maxStrengthPerSlot = parseInt(strength);
+        // res.json(adjacencyGraph);
+        // Step 3: Pass full JSON to C++
+        const finalTimetable = await runCppWithJson(adjacencyGraph);
 
-        res.json({ adjacencyGraph });
+        // Step 4: Send timetable to frontend (this includes the config)
+        // console.log(finalTimetable);
+        res.json(finalTimetable);
+        // console.log(finalTimetable);
+
     } catch (error) {
-        res.status(500).json({ error: "Error processing file", details: error.toString() });
-
+        console.error("Error:", error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Error processing file", details: error.toString() });
+        }
     }
 });
+
 
 module.exports = router;
