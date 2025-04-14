@@ -154,79 +154,47 @@ pair<int, int> getSumm()
     return {ct1, ct2};
 }
 
-void updateTT()
+vector<pair<int, int>> getSlots(string &sub)
 {
-    Summary.resize(students);
-    timeTable.resize(days, vector<Partition>(examPerDay));
-
+    int subHash = -1;
+    pair<int, int> pp;
     for (int i = 0; i < days; i++)
     {
         for (int j = 0; j < examPerDay; j++)
         {
-            for (int it : mainTT[i][j])
+            for (auto it : mainTT[i][j])
             {
-                timeTable[i][j].Subjects.insert(it);
-                timeTable[i][j].strength += subjectData[it].strength;
-                for (int st = 0; st < students; st++)
-                    if (studentData[st].subjectsEnrolled.find(it) != studentData[st].subjectsEnrolled.end())
-                        timeTable[i][j].Students.insert(st);
-            }
-            if (timeTable[i][j].strength != timeTable[i][j].Students.size())
-            {
-                cout << "Not Feasible\n";
-                exit(0);
-            }
-        }
-    }
-    for (int i = 0; i < students; i++)
-    {
-        Summary[i].exams.resize(days);
-        Summary[i].subs.resize(days);
-        Summary[i].rollNumber = studentData[i].rollNumber;
-        for (int d = 0; d < days; d++)
-        {
-            for (int j = 0; j < examPerDay; j++)
-            {
-                if (timeTable[d][j].Students.find(i) != timeTable[d][j].Students.end())
-                    Summary[i].exams[d]++;
-                for (auto it : timeTable[d][j].Subjects)
+                if (subjectData[it].Name == sub)
                 {
-                    if (studentData[i].subjectsEnrolled.find(it) != studentData[i].subjectsEnrolled.end())
-                        Summary[i].subs[d].push_back(subjectData[it].Name);
+                    subHash = it;
+                    pp = {i, j};
+                    break;
                 }
             }
         }
     }
-}
 
-void outJSON()
-{
-    vector<vector<pair<int, vs>>> vvs(days, vector<pair<int, vs>>(examPerDay));
+    vector<pair<int, int>> ans;
+    if (subHash == -1)
+        return ans;
     for (int i = 0; i < days; i++)
     {
         for (int j = 0; j < examPerDay; j++)
         {
-            int sum = 0;
+            bool flag = true;
             for (auto it : mainTT[i][j])
             {
-                string temp = " (" + to_string(subjectData[it].strength) + ")";
-                vvs[i][j].second.push_back(subjectData[it].Name + temp);
-                sum += subjectData[it].strength;
+                if (adjMatrix[it][subHash])
+                    flag = false;
             }
-            vvs[i][j].first = sum;
+            if (i == pp.first && j == pp.second)
+                flag = false;
+            if (flag)
+                ans.push_back({i, j});
         }
     }
 
-    json outJS;
-    outJS["adjacencyGraph"] = jsonData["adjacencyGraph"];
-    outJS["days"] = jsonData["examTT"].size();
-    outJS["slotsPerDay"] = examPerDay;
-    outJS["examTT"] = jsonData["examTT"];
-    outJS["subjNames"] = jsonData["subjNames"];
-    outJS["timeTable"] = vvs;
-    outJS["timeTableSummary"] = Summary;
-    outJS["Summary"] = {getTwoExams(), getSumm().first, getSumm().second};
-    cout << outJS.dump(1) << endl;
+    return ans;
 }
 
 int main()
@@ -234,7 +202,9 @@ int main()
     cin >> jsonData;
     Input();
     Input2();
-    updateTT();
-    outJSON();
+    string sub = jsonData["swap"]["subject"];
+    json outJson = jsonData;
+    outJson["swap"]["validSlots"] = getSlots(sub);
+    cout << outJson.dump(2) << endl;
     return 0;
 }

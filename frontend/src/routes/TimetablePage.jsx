@@ -5,27 +5,27 @@ import "../styles/TimetablePage.css";
 const TimetablePage = () => {
     const location = useLocation();
     const timetableData = location.state?.timetableData;
-    // console.log("Summary received:", timetableData.Summary);
+    const [validSlots, setValidSlots] = useState(null);
+    const [selectedSubject, setSelectedSubject] = useState(null);
+
     if (!timetableData || Object.keys(timetableData).length === 0) {
         return <p className="p-4 text-red-500">No timetable data received.</p>;
     }
 
     const handleDownload = async () => {
-        // console.log("button used");
         try {
             const response = await fetch("http://localhost:5000/excel/generate-excel", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(timetableData), // Send the timetable JSON here
+                body: JSON.stringify(timetableData),
             });
 
             if (!response.ok) throw new Error("Failed to download Excel");
 
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
-
             const link = document.createElement("a");
             link.href = url;
             link.setAttribute("download", "TimeTable.xlsx");
@@ -35,6 +35,29 @@ const TimetablePage = () => {
         } catch (err) {
             console.error("Download failed:", err);
             alert("Failed to download Excel");
+        }
+    };
+
+    const handleSubjectClick = async (subjectName) => {
+        try {
+            const cleanName = subjectName.split(" (")[0]; // Remove the number in parentheses
+            const response = await fetch("http://localhost:5000/api/slots", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    ...timetableData,
+                    swap: { subject: cleanName },
+                }),
+            });
+            const data = await response.json();
+            console.log(data.swap.subject);
+            console.log(data.swap.validSlots);
+            setValidSlots(data.swap.validSlots);
+            setSelectedSubject(cleanName);
+        } catch (err) {
+            console.error("Error fetching valid slots:", err);
         }
     };
 
@@ -60,7 +83,13 @@ const TimetablePage = () => {
                                     <div className="subject-grid">
                                         {subjects.length > 0 ? (
                                             subjects.map((subj, idx) => (
-                                                <span key={idx} className="subject-pill">{subj}</span>
+                                                <button
+                                                    key={idx}
+                                                    className="subject-pill"
+                                                    onClick={() => handleSubjectClick(subj)}
+                                                >
+                                                    {subj}
+                                                </button>
                                             ))
                                         ) : (
                                             <span className="text-gray-400 text-sm">No exams</span>
@@ -73,6 +102,7 @@ const TimetablePage = () => {
                 </tbody>
             </table>
 
+            {/* Checker Summary */}
             <div style={{ display: "flex", alignItems: "center", width: "100%", justifyContent: "center" }}>
                 {Array.isArray(timetableData.Summary) && timetableData.Summary.length === 3 && (
                     <div className="summary-container">
@@ -81,9 +111,22 @@ const TimetablePage = () => {
                             <p><strong>Students with 3 exams on two consecutive days:</strong> {timetableData.Summary[1]}</p>
                             <p><strong>Students with 4 exams on two consecutive days:</strong> {timetableData.Summary[2]}</p>
                         </div>
+
+                        {/* ✅ New Valid Slots Box */}
+                        {validSlots && (
+                            <div className="summary-box" style={{ marginTop: "20px" }}>
+                                <p><strong>Valid slots for "{selectedSubject}":</strong></p>
+                                <ul>
+                                    {validSlots.map(([day, slot], idx) => (
+                                        <li key={idx}>Day {day + 1}, Slot {slot + 1}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
+
             <div style={{ display: "flex", alignItems: "center", width: "100%", justifyContent: "center" }}>
                 <button className="download-btn" onClick={handleDownload}>
                     Download Excel

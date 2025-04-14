@@ -1,36 +1,30 @@
-const { spawn } = require("child_process");
+const { spawn } = require('child_process');
+const path = require('path');
 
-const runCpp3 = (jsonInput) => {
+const runCpp3 = (inputJson) => {
     return new Promise((resolve, reject) => {
-        const cpp = spawn("./cpp-files/checker2.exe");
+        const exePath = path.join(__dirname, '../../cpp-files/slot_suggester.exe');
+        const process = spawn(exePath);
 
-        let data = "";
-        let error = "";
-
-        cpp.stdout.on("data", (chunk) => {
-            data += chunk.toString();
+        let output = '';
+        process.stdout.on('data', (data) => {
+            output += data.toString();
         });
 
-        cpp.stderr.on("data", (chunk) => {
-            error += chunk.toString();
+        process.stderr.on('data', (data) => {
+            console.error(`Error: ${data}`);
         });
 
-        cpp.on("close", (code) => {
-            if (code !== 0 || error) {
-                return reject(`CPP error: ${error || `Exited with code ${code}`}`);
-            }
-
+        process.on('close', () => {
             try {
-                const parsed = JSON.parse(data);
-                resolve(parsed);
-            } catch (e) {
-                reject(`Invalid JSON from C++: ${e}`);
+                resolve(JSON.parse(output));
+            } catch (err) {
+                reject('Failed to parse C++ output');
             }
         });
 
-        // Send JSON input to C++
-        cpp.stdin.write(JSON.stringify(jsonInput));
-        cpp.stdin.end();
+        process.stdin.write(JSON.stringify(inputJson));
+        process.stdin.end();
     });
 };
 

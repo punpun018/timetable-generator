@@ -13,6 +13,17 @@
         "queue": "cpp",
         "xhash": "cpp",
         "xtree": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "unordered_set": "cpp",
+        "ostream": "cpp",
+        "utility": "cpp",
+        "array": "cpp",
+        "chrono": "cpp",
+        "deque": "cpp",
+        "format": "cpp",
+        "forward_list": "cpp",
+        "initializer_list": "cpp",
+        "list": "cpp",
+        "valarray": "cpp"
     }
 }
