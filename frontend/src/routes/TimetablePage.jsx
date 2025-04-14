@@ -4,9 +4,10 @@ import "../styles/TimetablePage.css";
 
 const TimetablePage = () => {
     const location = useLocation();
-    const timetableData = location.state?.timetableData;
+    // const timetableData = location.state?.timetableData;
     const [validSlots, setValidSlots] = useState(null);
     const [selectedSubject, setSelectedSubject] = useState(null);
+    const [timetableData, setTimetableData] = useState(location.state?.timetableData || {});
 
     if (!timetableData || Object.keys(timetableData).length === 0) {
         return <p className="p-4 text-red-500">No timetable data received.</p>;
@@ -58,6 +59,61 @@ const TimetablePage = () => {
             setSelectedSubject(cleanName);
         } catch (err) {
             console.error("Error fetching valid slots:", err);
+        }
+    };
+
+    const handleMoveSubject = async (newDay, newSlot) => {
+        try {
+            const updatedTimetable = JSON.parse(JSON.stringify(timetableData));
+
+            const baseName = selectedSubject.split(" (")[0];
+            const subjectEntry = updatedTimetable.adjacencyGraph.courses[baseName];
+            if (!subjectEntry) throw new Error("Subject not found in adjacency graph");
+
+            const subjectId = subjectEntry.id;
+
+            // --- Remove from old position in examTT and subjNames ---
+            let found = false;
+            for (let d = 0; d < updatedTimetable.examTT.length; d++) {
+                for (let s = 0; s < updatedTimetable.examTT[d].length; s++) {
+                    const idIndex = updatedTimetable.examTT[d][s].indexOf(subjectId);
+                    const nameIndex = updatedTimetable.subjNames[d][s].indexOf(selectedSubject);
+
+                    if (idIndex !== -1) {
+                        updatedTimetable.examTT[d][s].splice(idIndex, 1);
+                        if (nameIndex !== -1) {
+                            updatedTimetable.subjNames[d][s].splice(nameIndex, 1);
+                        }
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) break;
+            }
+
+            // --- Add to new position ---
+            updatedTimetable.examTT[newDay][newSlot].push(subjectId);
+            updatedTimetable.subjNames[newDay][newSlot].push(selectedSubject);
+
+            // --- Send to checker ---
+            const response = await fetch("http://localhost:5000/api/checker", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(updatedTimetable),
+            });
+
+            if (!response.ok) throw new Error("Checker failed");
+
+            const newCheckedData = await response.json();
+
+            setValidSlots([]);
+            setSelectedSubject(null);
+            setTimetableData(newCheckedData);
+        } catch (err) {
+            console.error("Failed to move subject:", err);
+            alert("Move failed.");
         }
     };
 
@@ -118,9 +174,26 @@ const TimetablePage = () => {
                                 <p><strong>Valid slots for "{selectedSubject}":</strong></p>
                                 <ul>
                                     {validSlots.map(([day, slot], idx) => (
-                                        <li key={idx}>Day {day + 1}, Slot {slot + 1}</li>
+                                        <li key={idx} style={{ marginBottom: "8px" }}>
+                                            Day {day + 1}, Slot {slot + 1}{" "}
+                                            <button
+                                                onClick={() => handleMoveSubject(day, slot)}
+                                                style={{
+                                                    marginLeft: "10px",
+                                                    padding: "4px 8px",
+                                                    backgroundColor: "#4CAF50",
+                                                    color: "white",
+                                                    border: "none",
+                                                    borderRadius: "4px",
+                                                    cursor: "pointer"
+                                                }}
+                                            >
+                                                Move
+                                            </button>
+                                        </li>
                                     ))}
                                 </ul>
+
                             </div>
                         )}
                     </div>
