@@ -9,6 +9,10 @@
         "span": "cpp",
         "xmemory": "cpp",
         "xstring": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "queue": "cpp",
+        "xhash": "cpp",
+        "xtree": "cpp",
+        "vector": "cpp"
     }
 }

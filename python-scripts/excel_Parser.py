@@ -3,17 +3,13 @@ import json
 import pandas as pd
 from sortedcontainers import SortedDict, SortedSet
 
-# ✅ Add default config values here
-NUMBER_OF_DAYS = 9
-NUMBER_OF_SLOTS = 3
-MAX_STRENGTH_PER_SLOT = 100
+def parse_excel(excel_file: str) -> dict:
 
-def parse_excel(file_path):
-    df = pd.read_excel(file_path, engine="openpyxl")
+    df = pd.read_excel(excel_file, engine="openpyxl")
 
     courses = SortedDict()
+
     students = SortedDict()
-    reversed_students = SortedDict()
 
     for column in df.columns:
         courses[column] = -1
@@ -25,44 +21,45 @@ def parse_excel(file_path):
 
     for i, student in enumerate(students):
         students[student] = i
-        reversed_students[i] = student
 
-    course_size = [0] * len(courses)
+    courseSize = [0] * len(courses)
+
     for column in df.columns:
-        course_size[courses[column]] = len(df[column].dropna())
+        courseSize[courses[column]] = len(df[column].dropna())
 
-    courses_student = [SortedSet() for _ in range(len(courses))]
+    courseStudents = [SortedSet() for _ in range(len(courses))]
+
     for col in df.columns:
         col_index = courses[col]
         for student in df[col].dropna():
-            courses_student[col_index].add(students[student])
+            courseStudents[col_index].add(students[student])
 
-    student_courses = [SortedSet() for _ in range(len(students))]
+    studentCourses = [SortedSet() for _ in range(len(students))]
+
     for col in df.columns:
         col_index = courses[col]
         for student in df[col].dropna():
-            student_courses[students[student]].add(col_index)
+            studentCourses[students[student]].add(col_index)
 
-    graph_edges = SortedSet()
-    for i in range(len(courses)):
-        for student in courses_student[i]:
-            for j in range(i + 1, len(courses)):
-                if student in courses_student[j]:
-                    graph_edges.add((min(i, j), max(i, j), 1))  # Use weight 1
+    # collection of edges which can not be together
+    graphEdges = SortedSet()
 
-    # ✅ Final formatted result
-    result = {
-        "numberOfDays": NUMBER_OF_DAYS,
-        "numberOfSlots": NUMBER_OF_SLOTS,
-        "maxStrengthPerSlot": MAX_STRENGTH_PER_SLOT,
+    for i, students_i in enumerate(courseStudents):
+            for j in range(i + 1, len(courseStudents)):
+                num_common_students = len(students_i & courseStudents[j])
+                if num_common_students > 0:
+                    graphEdges.add((i, j, num_common_students))
+
+    return {
+        "numberOfDays": -1,
+        "numberOfSlots": -1,
         "numberOfCourses": len(courses),
-        "numberOfEdges": len(graph_edges),
-        "edges": list(graph_edges),
-        "courses": {column: {"id": i, "size": course_size[i]} for column, i in courses.items()},
-        "students": {student: {"id": i, "courses": list(student_courses[i])} for student, i in students.items()}
+        "numberOfEdges": len(graphEdges),
+        "edges": list(graphEdges),
+        "courses": {column: {"id": i, "size": courseSize[i]} for column, i in courses.items()},
+        "students": {student: {"id": i, "courses": list(studentCourses[i])} for student, i in students.items()}
     }
 
-    return result
 
 if __name__ == "__main__":
     input_file = sys.stdin.buffer.read()
@@ -73,4 +70,5 @@ if __name__ == "__main__":
 
     result = parse_excel(temp_file)
 
+    # ✅ Wrap inside "adjacencyGraph"
     print(json.dumps({ "adjacencyGraph": result }))

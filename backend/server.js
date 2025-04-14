@@ -12,7 +12,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/upload", require("./routes/uploadRoutes"));
-app.use("/timetable", require("./routes/timetableRoutes"));
+app.use("/timetable", require("./routes/validateRoutes"));
+app.use("/excel", require("./routes/excelRoutes"));
 
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const { runPython } = require("../utils/runPython");
 const runCppWithJson = require("../utils/runCpp"); // <--- add this
-
+const runCpp2WithJson = require("../utils/runCpp2"); // <--- add this
 const router = express.Router();
 
 // Configure Multer for file uploads
@@ -22,14 +22,15 @@ router.post("/", upload.single("file"), async (req, res) => {
         adjacencyGraph.adjacencyGraph.numberOfDays = parseInt(days);
         adjacencyGraph.adjacencyGraph.numberOfSlots = parseInt(slots);
         adjacencyGraph.adjacencyGraph.maxStrengthPerSlot = parseInt(strength);
-        // res.json(adjacencyGraph);
-        // Step 3: Pass full JSON to C++
+
+        // Step 2: Pass full JSON to C++
         const finalTimetable = await runCppWithJson(adjacencyGraph);
 
+        // Step 3: Pass full JSON to C++2
+        const finaloTimetable = await runCpp2WithJson(finalTimetable);
+
         // Step 4: Send timetable to frontend (this includes the config)
-        // console.log(finalTimetable);
-        res.json(finalTimetable);
-        // console.log(finalTimetable);
+        res.json(finaloTimetable);
 
     } catch (error) {
         console.error("Error:", error);

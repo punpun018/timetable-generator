@@ -1,9 +1,9 @@
 #include <iostream>
-#include <fstream>
 #include <vector>
-#include <string>
 #include <set>
-#include <map>
+#include <queue>
+#include <unordered_set>
+#include <tuple>
 #include <algorithm>
 #include "json.hpp"
 
@@ -13,12 +13,14 @@ using namespace std;
 #define vi vector<int>
 #define vb vector<bool>
 #define vp vector<pair<int, int>>
+#define all(x) x.begin(), x.end()
 #define vs vector<string>
 
 struct Subject
 {
     int hash, strength;
     string Name;
+    set<int> studentsEnrolled;
 };
 
 struct Student
@@ -28,6 +30,13 @@ struct Student
     set<int> subjectsEnrolled;
 };
 
+struct summary
+{
+    string rollNumber;
+    vi exams;
+    vector<vector<string>> subs;
+};
+
 struct Partition
 {
     int strength = 0;
@@ -35,110 +44,89 @@ struct Partition
     set<int> Students;
 };
 
-struct summary
+void to_json(json &j, const summary &s)
 {
-    string rollNumber;
-    vi exams;
+    j = json{
+        {"rollNumber", s.rollNumber},
+        {"exams", s.exams},
+        {"subs", s.subs}};
+}
 
-    friend void to_json(json &j, const summary &s)
-    {
-        j = json{{"rollNumber", s.rollNumber}, {"exams", s.exams}};
-    }
-
-    friend void from_json(const json &j, summary &s)
-    {
-        j.at("rollNumber").get_to(s.rollNumber);
-        j.at("exams").get_to(s.exams);
-    }
-};
-
-int subjects, edges, students, days, examPerDay;
+int subjects, edges, students, days, examPerDay, limit, totalSlots;
 vector<set<int>> Graph;
 vector<Subject> subjectData;
 vector<Student> studentData;
+vector<Partition> Slots;
+vector<vector<set<int>>> mainTT;
 vector<vector<Partition>> timeTable;
-vector<vector<vs>> ttSchedule;
+vector<vi> adjMatrix;
 vector<summary> Summary;
+json jsonData;
 
-void Input(json &jsonData)
+void Input()
 {
-    subjects = jsonData["adjacencyGraph"]["num_courses"];
-    edges = jsonData["adjacencyGraph"]["num_edges"];
+    subjects = jsonData["adjacencyGraph"]["numberOfCourses"];
+    edges = jsonData["adjacencyGraph"]["numberOfEdges"];
     students = jsonData["adjacencyGraph"]["students"].size();
+    days = jsonData["adjacencyGraph"]["numberOfDays"];
+    examPerDay = jsonData["adjacencyGraph"]["numberOfSlots"];
+    limit = jsonData["adjacencyGraph"]["maxStrengthPerSlot"];
 
+    string s;
+    int id, str, u, v, wt;
     Graph.resize(subjects);
     subjectData.resize(subjects);
     studentData.resize(students);
+    adjMatrix.resize(subjects, vi(subjects));
 
-    for (const auto &it : jsonData["adjacencyGraph"]["edges"])
+    for (auto it : jsonData["adjacencyGraph"]["edges"])
     {
-        int u = it[0], v = it[1];
+        u = it[0], v = it[1], wt = it[2];
         Graph[u].insert(v);
         Graph[v].insert(u);
+        adjMatrix[u][v] = adjMatrix[v][u] = wt;
     }
 
     int i = 0;
     for (auto &[course_name, course_details] : jsonData["adjacencyGraph"]["courses"].items())
     {
-        subjectData[i].Name = course_name;
-        subjectData[i].hash = course_details["id"];
-        subjectData[i++].strength = course_details["size"];
+        s = course_name;
+        id = course_details["id"];
+        if (id != i)
+            cout << "Fail";
+        str = course_details["size"];
+        subjectData[i].Name = s;
+        subjectData[i].hash = id;
+        subjectData[i++].strength = str;
     }
 
     i = 0;
-    for (auto &[roll, info] : jsonData["adjacencyGraph"]["students"].items())
+    for (auto &[x, y] : jsonData["adjacencyGraph"]["students"].items())
     {
-        studentData[i].rollNumber = roll;
-        studentData[i].hash = info["id"];
-        studentData[i].noOfSubjects = info["courses"].size();
-        for (int sub : info["courses"])
-            studentData[i].subjectsEnrolled.insert(sub);
+        s = x;
+        studentData[i].rollNumber = s;
+        id = y["id"];
+        studentData[i].hash = id;
+        str = y["courses"].size();
+        studentData[i].noOfSubjects = str;
+        for (int it : y["courses"])
+            studentData[i].subjectsEnrolled.insert(it);
         i++;
     }
+    totalSlots = days * examPerDay;
+}
 
-    days = jsonData["adjacencyGraph"]["timeTable"].size();
-    examPerDay = jsonData["adjacencyGraph"]["timeTable"][0].size();
-    timeTable.resize(days, vector<Partition>(examPerDay));
-    ttSchedule.resize(days, vector<vs>(examPerDay));
-
+void Input2()
+{
+    days = jsonData["examTT"].size();
+    examPerDay = jsonData["examTT"][0].size();
+    mainTT.resize(days, vector<set<int>>(examPerDay));
     for (int i = 0; i < days; i++)
     {
         for (int j = 0; j < examPerDay; j++)
         {
-            for (int it : jsonData["adjacencyGraph"]["timeTable"][i][j])
-            {
-                ttSchedule[i][j].push_back(subjectData[it].Name);
-                timeTable[i][j].Subjects.insert(it);
-                timeTable[i][j].strength += subjectData[it].strength;
-                for (int st = 0; st < students; st++)
-                {
-                    if (studentData[st].subjectsEnrolled.count(it))
-                        timeTable[i][j].Students.insert(st);
-                }
-            }
-            if (timeTable[i][j].strength != (int)timeTable[i][j].Students.size())
-            {
-                cout << "Not Feasible\n";
-                exit(0);
-            }
-        }
-    }
-}
-
-void createSummary()
-{
-    Summary.resize(students);
-    for (int i = 0; i < students; i++)
-    {
-        Summary[i].exams.resize(days);
-        Summary[i].rollNumber = studentData[i].rollNumber;
-        for (int d = 0; d < days; d++)
-        {
-            for (int j = 0; j < examPerDay; j++)
-            {
-                if (timeTable[d][j].Students.count(i))
-                    Summary[i].exams[d]++;
-            }
+            for (int it : jsonData["examTT"][i][j])
+                mainTT[i][j].insert(it);
         }
     }
 }
@@ -154,60 +142,98 @@ int getTwoExams()
 pair<int, int> getSumm()
 {
     int ct1 = 0, ct2 = 0;
-    for (int i = 0; i < students; i++)
-    {
+    for (int i = 0, num; i < students; i++)
         for (int j = 0; j < days - 1; j++)
         {
-            int num = Summary[i].exams[j] + Summary[i].exams[j + 1];
+            num = Summary[i].exams[j] + Summary[i].exams[j + 1];
             if (num == 3)
                 ct1++;
             if (num == 4)
                 ct2++;
         }
-    }
     return {ct1, ct2};
+}
+
+void updateTT()
+{
+    Summary.resize(students);
+    timeTable.resize(days, vector<Partition>(examPerDay));
+
+    for (int i = 0; i < days; i++)
+    {
+        for (int j = 0; j < examPerDay; j++)
+        {
+            for (int it : mainTT[i][j])
+            {
+                timeTable[i][j].Subjects.insert(it);
+                timeTable[i][j].strength += subjectData[it].strength;
+                for (int st = 0; st < students; st++)
+                    if (studentData[st].subjectsEnrolled.find(it) != studentData[st].subjectsEnrolled.end())
+                        timeTable[i][j].Students.insert(st);
+            }
+            if (timeTable[i][j].strength != timeTable[i][j].Students.size())
+            {
+                cout << "Not Feasible\n";
+                exit(0);
+            }
+        }
+    }
+    for (int i = 0; i < students; i++)
+    {
+        Summary[i].exams.resize(days);
+        Summary[i].subs.resize(days);
+        Summary[i].rollNumber = studentData[i].rollNumber;
+        for (int d = 0; d < days; d++)
+        {
+            for (int j = 0; j < examPerDay; j++)
+            {
+                if (timeTable[d][j].Students.find(i) != timeTable[d][j].Students.end())
+                    Summary[i].exams[d]++;
+                for (auto it : timeTable[d][j].Subjects)
+                {
+                    if (studentData[i].subjectsEnrolled.find(it) != studentData[i].subjectsEnrolled.end())
+                        Summary[i].subs[d].push_back(subjectData[it].Name);
+                }
+            }
+        }
+    }
+}
+
+void outJSON()
+{
+    vector<vector<pair<int, vs>>> vvs(days, vector<pair<int, vs>>(examPerDay));
+    for (int i = 0; i < days; i++)
+    {
+        for (int j = 0; j < examPerDay; j++)
+        {
+            int sum = 0;
+            for (auto it : mainTT[i][j])
+            {
+                string temp = " (" + to_string(subjectData[it].strength) + ")";
+                vvs[i][j].second.push_back(subjectData[it].Name + temp);
+                sum += subjectData[it].strength;
+            }
+            vvs[i][j].first = sum;
+        }
+    }
+
+    json outJS;
+    outJS["days"] = jsonData["examTT"].size();
+    outJS["slotsPerDay"] = examPerDay;
+    outJS["examTT"] = jsonData["examTT"];
+    outJS["subjNames"] = jsonData["subjNames"];
+    outJS["timeTable"] = vvs;
+    outJS["timeTableSummary"] = Summary;
+    outJS["Summary"] = {getTwoExams(), getSumm().first, getSumm().second};
+    cout << outJS.dump(1) << endl;
 }
 
 int main()
 {
-    ifstream file("TimeTable_json.txt");
-    if (!file.is_open())
-    {
-        cerr << "Error opening file!" << endl;
-        return 1;
-    }
-
-    json jsonData;
-    file >> jsonData;
-
-    Input(jsonData);
-    createSummary();
-
-    json finalJson;
-    finalJson["studentExamTable"] = Summary;
-
-    json timeTableJson;
-    for (int i = 0; i < ttSchedule.size(); i++)
-    {
-        json dayJson;
-        for (int j = 0; j < ttSchedule[i].size(); j++)
-        {
-            json slotJson;
-            slotJson["Subjects"] = ttSchedule[i][j];
-            slotJson["Strength"] = timeTable[i][j].strength;
-            dayJson["Slot " + to_string(j + 1)] = slotJson;
-        }
-        timeTableJson["Day " + to_string(i + 1)] = dayJson;
-    }
-
-    finalJson["Schedule"] = timeTableJson;
-    finalJson["Two Exams In a Day"] = getTwoExams();
-    finalJson["Three Exams In Two Day"] = getSumm().first;
-    finalJson["Four Exams In Two Day"] = getSumm().second;
-
-    ofstream outFile("TimeTableSummary.txt");
-    outFile << finalJson.dump(2) << endl;
-    outFile.close();
-
+    cin >> jsonData;
+    Input();
+    Input2();
+    updateTT();
+    outJSON();
     return 0;
 }
