@@ -33,11 +33,11 @@ const HomePage = () => {
             body: formData,
         })
             .then((response) => {
-                console.log("Backend responded:", response); // 🐞 Check this
+                console.log("Backend responded:", response);
                 return response.json();
             })
             .then((data) => {
-                console.log("Parsed JSON:", data); // 🐞 Check if you get the expected timetable
+                console.log("Parsed JSON:", data);
                 navigate("/timetable", { state: { timetableData: data } });
             })
             .catch((error) => console.error("Error uploading file:", error));
@@ -93,7 +93,7 @@ const HomePage = () => {
 
                 <button onClick={handleSubmit} className="generate-btn">Generate Timetable</button>
             </div>
-            <footer className="footer">
+            {/* <footer className="footer">
                 <p>Project Mentor: Dr. Sandeep Saini</p>
                 <p>
                     This project was developed under the guidance of <strong>Dr. Sandeep Saini</strong>,
@@ -102,7 +102,7 @@ const HomePage = () => {
                 </p>
                 <p>Developed by: Romit Sovakar, Ayush Khandal, Yatharth Patil</p>
 
-            </footer>
+            </footer> */}
         </div>
     );
 };
