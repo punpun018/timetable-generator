@@ -19,9 +19,9 @@ router.post("/", upload.single("file"), async (req, res) => {
 
         // Step 1: Run Python to get adjacencyGraph
         const adjacencyGraph = await runPython(req.file.buffer);
-        adjacencyGraph.adjacencyGraph.numberOfDays = parseInt("10");
-        adjacencyGraph.adjacencyGraph.numberOfSlots = parseInt("2");
-        adjacencyGraph.adjacencyGraph.maxStrengthPerSlot = parseInt("1000");
+        adjacencyGraph.adjacencyGraph.numberOfDays = parseInt(days);
+        adjacencyGraph.adjacencyGraph.numberOfSlots = parseInt(slots);
+        adjacencyGraph.adjacencyGraph.maxStrengthPerSlot = parseInt(strength);
 
         // Step 2: Pass full JSON to C++
         const finalTimetable = await runCppWithJson(adjacencyGraph);

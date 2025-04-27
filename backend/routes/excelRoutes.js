@@ -51,6 +51,47 @@ router.post("/generate-excel", async (req, res) => {
             column.width = 30;
         });
 
+        // ===== Extra Sheet: Timetable for Students =====
+        const worksheetStudent = workbook.addWorksheet("Timetable for Students");
+
+        // Header Row
+        worksheetStudent.addRow(headerRow);
+
+        // Bold and center headers
+        worksheetStudent.getRow(1).eachCell(cell => {
+            cell.font = { bold: true };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        });
+
+        // Fill in timetable data without brackets
+        for (let day = 0; day < jsonData.days; day++) {
+            const row = [`Day ${day + 1}`];
+            for (let slot = 0; slot < jsonData.slotsPerDay; slot++) {
+                const subjects = jsonData.subjNames[day][slot] || [];
+
+                // Remove numbers in brackets using regex
+                const cleanedSubjects = subjects.map(sub =>
+                    sub.replace(/\s*\(.*?\)\s*/g, '').trim()
+                );
+
+                row.push(cleanedSubjects.join('\n'));
+            }
+            worksheetStudent.addRow(row);
+        }
+
+        // Word wrap and alignment
+        worksheetStudent.eachRow(row => {
+            row.eachCell(cell => {
+                cell.alignment = { wrapText: true, vertical: 'top', horizontal: 'left' };
+            });
+        });
+
+        // Auto width
+        worksheetStudent.columns.forEach(column => {
+            column.width = 30;
+        });
+
+
         // ===== Second Sheet: Strength Summary =====
         const worksheet2 = workbook.addWorksheet("Strength Summary");
 

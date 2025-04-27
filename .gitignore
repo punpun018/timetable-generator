@@ -10,5 +10,6 @@ uploads/
 # Ignore environment files
 .env
 
+/cpp-files/json.hpp
 
 *.xlsx

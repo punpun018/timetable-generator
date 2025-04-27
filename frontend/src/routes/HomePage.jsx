@@ -10,6 +10,8 @@ const HomePage = () => {
     const [days, setDays] = useState(5);
     const [slots, setSlots] = useState(4);
     const [strength, setStrength] = useState(0); // ✅ New state for strength
+    const [loading, setLoading] = useState(false);
+
 
     const onDrop = (acceptedFiles) => {
         setFile(acceptedFiles[0]);
@@ -20,7 +22,7 @@ const HomePage = () => {
             alert("Please upload an Excel file.");
             return;
         }
-
+        setLoading(true); // Start loading
         const formData = new FormData();
         formData.append("file", file);
         formData.append("examType", examType);
@@ -49,12 +51,14 @@ const HomePage = () => {
         <div className="home-container">
             <header className="header">
                 <div className="logo-container">
-                    <img src="/lnmiitlogo.png" alt="LNMIIT Logo" className="logo" />
+                    <img src="/Timetablelogonew.jpg" alt="LNMIIT Logo" className="logo" />
                 </div>
             </header>
 
             <div className="body">
-                <h1>Time Table Generator</h1>
+                <h1 className="homepage-title">📅 Smart Exam Timetable Generator</h1>
+
+
 
                 <div {...getRootProps()} className="dropzone">
                     <input {...getInputProps()} />
@@ -93,17 +97,24 @@ const HomePage = () => {
 
                 <button onClick={handleSubmit} className="generate-btn">Generate Timetable</button>
             </div>
-            {/* <footer className="footer">
+            <footer className="footer">
                 <p>Project Mentor: Dr. Sandeep Saini</p>
-                <p>
+                {/* <p>
                     This project was developed under the guidance of <strong>Dr. Sandeep Saini</strong>,
                     whose valuable mentorship, constant support, and insightful feedback were instrumental
                     throughout the development process.
-                </p>
+                </p> */}
                 <p>Developed by: Romit Sovakar, Ayush Khandal, Yatharth Patil</p>
 
-            </footer> */}
+            </footer>
+            {loading && (
+                <div className="loader-overlay">
+                    <img src="/Timetablelogonew2.png" alt="Loading..." className="loader-logo" />
+                </div>
+            )}
+
         </div>
+
     );
 };
 
