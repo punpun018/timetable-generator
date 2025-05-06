@@ -4,12 +4,11 @@ import "../styles/TimetablePage.css";
 
 const TimetablePage = () => {
     const location = useLocation();
-    // const timetableData = location.state?.timetableData;
     const [validSlots, setValidSlots] = useState(null);
     const [selectedSubject, setSelectedSubject] = useState(null);
     const [timetableData, setTimetableData] = useState(location.state?.timetableData || {});
-    const [swapDay1, setSwapDay1] = useState("");
-    const [swapDay2, setSwapDay2] = useState("");
+    // const [swapDay1, setSwapDay1] = useState("");
+    // const [swapDay2, setSwapDay2] = useState("");
     const [swapSlotDayA, setSwapSlotDayA] = useState("");
     const [swapSlotDayB, setSwapSlotDayB] = useState("");
     const [swapSlotA, setSwapSlotA] = useState("");
@@ -53,7 +52,7 @@ const TimetablePage = () => {
 
     const handleSubjectClick = async (subjectName) => {
         try {
-            const cleanName = subjectName.split(" (")[0]; // Remove the number in parentheses
+            const cleanName = subjectName.split(" (")[0];
             const response = await fetch("http://localhost:5000/api/slots", {
                 method: "POST",
                 headers: {
@@ -83,13 +82,13 @@ const TimetablePage = () => {
 
             const subjectId = subjectEntry.id;
 
-            // --- Try to find a fullName by matching baseName with the start of a name ---
+
             let fullName = null;
 
             for (let d = 0; d < updatedTimetable.subjNames.length; d++) {
                 for (let s = 0; s < updatedTimetable.subjNames[d].length; s++) {
                     for (const name of updatedTimetable.subjNames[d][s]) {
-                        const baseFromName = name.split(" (")[0]; // Get base name from full subject
+                        const baseFromName = name.split(" (")[0];
                         if (baseFromName === baseName) {
                             fullName = name;
                             break;
@@ -103,7 +102,6 @@ const TimetablePage = () => {
             if (!fullName) throw new Error("Full subject name not found in subjNames");
 
 
-            // --- Remove from old position in examTT and subjNames ---
             let found = false;
             for (let d = 0; d < updatedTimetable.examTT.length; d++) {
                 for (let s = 0; s < updatedTimetable.examTT[d].length; s++) {
@@ -122,11 +120,11 @@ const TimetablePage = () => {
                 if (found) break;
             }
 
-            // --- Add to new position ---
+
             updatedTimetable.examTT[newDay][newSlot].push(subjectId);
             updatedTimetable.subjNames[newDay][newSlot].push(fullName);
 
-            // --- Send to checker ---
+
             const response = await fetch("http://localhost:5000/api/checker", {
                 method: "POST",
                 headers: {
@@ -138,7 +136,7 @@ const TimetablePage = () => {
             if (!response.ok) throw new Error("Checker failed");
 
             const newCheckedData = await response.json();
-            // inside handleMoveSubject or similar
+
             saveToHistory(newCheckedData);
 
 
@@ -150,54 +148,6 @@ const TimetablePage = () => {
             alert("Move failed.");
         }
     };
-
-    // const handleSwapDays = () => {
-    //     const d1 = parseInt(swapDay1) - 1; // convert to 0-indexed
-    //     const d2 = parseInt(swapDay2) - 1;
-
-    //     if (
-    //         isNaN(d1) || isNaN(d2) ||
-    //         d1 < 0 || d1 >= timetableData.examTT.length ||
-    //         d2 < 0 || d2 >= timetableData.examTT.length
-    //     ) {
-    //         alert("Invalid day numbers");
-    //         return;
-    //     }
-
-    //     // Save the original state before any modification into history
-    //     const originalState = JSON.parse(JSON.stringify(timetableData));
-    //     saveToHistory(originalState);  // Save pre-swap state
-
-    //     const updated = { ...timetableData };
-
-    //     // Swap subjNames
-    //     const tempNames = updated.subjNames[d1];
-    //     updated.subjNames[d1] = updated.subjNames[d2];
-    //     updated.subjNames[d2] = tempNames;
-
-    //     // Swap examTT
-    //     const tempTT = updated.examTT[d1];
-    //     updated.examTT[d1] = updated.examTT[d2];
-    //     updated.examTT[d2] = tempTT;
-
-    //     // Optional: if the backend checker is needed after swap
-    //     fetch("http://localhost:5000/api/checker", {
-    //         method: "POST",
-    //         headers: { "Content-Type": "application/json" },
-    //         body: JSON.stringify(updated),
-    //     })
-    //         .then(res => res.json())
-    //         .then((checked) => {
-    //             // Only update the state after receiving the validated timetable
-    //             setTimetableData(checked);
-    //             setSwapDay1("");
-    //             setSwapDay2("");
-    //         })
-    //         .catch(err => {
-    //             console.error("Swap check failed", err);
-    //             alert("Failed to validate swapped days");
-    //         });
-    // };
 
 
 
@@ -220,9 +170,9 @@ const TimetablePage = () => {
                 return;
             }
 
-            // Save the original state before any modification into history
+
             const originalState = JSON.parse(JSON.stringify(timetableData));
-            saveToHistory(originalState);  // Save pre-swap state
+            saveToHistory(originalState);
 
             // Swap examTT
             const tempExam = updatedTimetable.examTT[dayA][slotA];
@@ -264,7 +214,7 @@ const TimetablePage = () => {
 
     const saveToHistory = (newData) => {
         setHistory(prev => [...prev, timetableData]);
-        setRedoStack([]); // Clear redo stack on new action
+        setRedoStack([]);
         setTimetableData(newData);
     };
 
@@ -384,26 +334,6 @@ const TimetablePage = () => {
                 )}
             </div>
 
-            {/* <div className="swap-days-container">
-                <h3>Swap Days</h3>
-                <input
-                    type="number"
-                    placeholder="Day 1"
-                    value={swapDay1}
-                    onChange={(e) => setSwapDay1(e.target.value)}
-                    className="swap-day-input"
-                />
-                <input
-                    type="number"
-                    placeholder="Day 2"
-                    value={swapDay2}
-                    onChange={(e) => setSwapDay2(e.target.value)}
-                    className="swap-day-input"
-                />
-                <button className="swap-day-button" onClick={handleSwapDays}>
-                    Swap Days
-                </button>
-            </div> */}
 
             <div className="summary-box" style={{ marginTop: "20px" }}>
                 <h3 className="font-semibold mb-2">Swap Slots Between Days</h3>

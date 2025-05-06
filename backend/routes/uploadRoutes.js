@@ -1,11 +1,10 @@
 const express = require("express");
 const multer = require("multer");
 const { runPython } = require("../utils/runPython");
-const runCppWithJson = require("../utils/runCpp"); // <--- add this
-const runCpp2WithJson = require("../utils/runCpp2"); // <--- add this
+const runCppWithJson = require("../utils/runCpp"); 
+const runCpp2WithJson = require("../utils/runCpp2");
 const router = express.Router();
 
-// Configure Multer for file uploads
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 

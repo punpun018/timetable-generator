@@ -9,7 +9,6 @@
 /* Header with logo */
 .header {
     background-color: #f0f8ff;
-    /* Alice Blue */
     display: flex;
     justify-content: flex-start;
     align-items: center;

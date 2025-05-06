@@ -6,10 +6,10 @@ import "../styles/HomePage.css";
 const HomePage = () => {
     const navigate = useNavigate();
     const [file, setFile] = useState(null);
-    const [examType, setExamType] = useState("midterm");
-    const [days, setDays] = useState(5);
-    const [slots, setSlots] = useState(4);
-    const [strength, setStrength] = useState(0); // ✅ New state for strength
+    // const [examType, setExamType] = useState("midterm");
+    const [days, setDays] = useState(0);
+    const [slots, setSlots] = useState(0);
+    const [strength, setStrength] = useState(0);
     const [loading, setLoading] = useState(false);
 
 
@@ -22,13 +22,13 @@ const HomePage = () => {
             alert("Please upload an Excel file.");
             return;
         }
-        setLoading(true); // Start loading
+        setLoading(true);
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("examType", examType);
+        // formData.append("examType", examType);
         formData.append("days", days);
         formData.append("slots", slots);
-        formData.append("strength", strength); // ✅ Include strength in form data
+        formData.append("strength", strength);
 
         fetch("http://localhost:5000/upload", {
             method: "POST",
@@ -67,14 +67,6 @@ const HomePage = () => {
 
                 {file && <p className="file-name">Selected: {file.name}</p>}
 
-                {/* <div className="options">
-                    <label>Exam Type:</label>
-                    <select value={examType} onChange={(e) => setExamType(e.target.value)}>
-                        <option value="midterm">Midterm</option>
-                        <option value="endterm">Endterm</option>
-                    </select>
-                </div> */}
-
                 <div className="options">
                     <label>Number of Days:</label>
                     <input type="number" value={days} min="1" onChange={(e) => setDays(e.target.value)} />
@@ -86,7 +78,7 @@ const HomePage = () => {
                 </div>
 
                 <div className="options">
-                    <label>Strength per Slot:</label> {/* ✅ New input */}
+                    <label>Strength per Slot:</label>
                     <input
                         type="number"
                         value={strength}
@@ -99,11 +91,6 @@ const HomePage = () => {
             </div>
             <footer className="footer">
                 <p>Project Mentor: Dr. Sandeep Saini</p>
-                {/* <p>
-                    This project was developed under the guidance of <strong>Dr. Sandeep Saini</strong>,
-                    whose valuable mentorship, constant support, and insightful feedback were instrumental
-                    throughout the development process.
-                </p> */}
                 <p>Developed by: Romit Sovakar, Ayush Khandal, Yatharth Patil</p>
 
             </footer>

@@ -11,14 +11,14 @@ router.post("/validate-swap", async (req, res) => {
             return res.status(400).json({ error: "Invalid input: 'prevjson' or 'Swap' missing." });
         }
 
-        // Call checker2.exe with prevjson directly
+        // Call checker2.exe with prevjson
         const newjson = await runCpp3(prevjson);
 
         if (!newjson) {
             return res.status(500).json({ error: "Swap validation failed or returned empty result." });
         }
 
-        // Remove Swap before sending
+
         delete newjson.Swap;
 
         res.json(newjson);
