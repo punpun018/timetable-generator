@@ -17,5 +17,8 @@ app.use("/timetable", require("./routes/validateRoutes"));
 app.use("/excel", require("./routes/excelRoutes"));
 app.use('/api/slots', slotSuggestionRoutes);
 app.use("/api/checker", checkerRoutes); // <--- use it heres
+app.use('/health', () => {
+    console.log("SERVER ON");
+})
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
