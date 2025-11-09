@@ -3,7 +3,7 @@ const path = require('path');
 
 const runCpp3 = (inputJson) => {
     return new Promise((resolve, reject) => {
-        const exePath = path.join(__dirname, '../cpp-files/slot_suggester.exe');
+        const exePath = path.join(__dirname, '../cpp-files/slot_suggester');
         const process = spawn(exePath);
 
         let output = '';

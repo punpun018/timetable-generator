@@ -4,7 +4,7 @@ const path = require("path");
 function runCheckerWithJson(inputJson) {
     return new Promise((resolve, reject) => {
 
-        const exePath = path.join(__dirname, "..", "cpp-files", "checker.exe");
+        const exePath = path.join(__dirname, "..", "cpp-files", "checker");
         const cpp = spawn(exePath);
         let output = "";
         let errorOutput = "";
