@@ -5,11 +5,16 @@ const app = express();
 const slotSuggestionRoutes = require('./routes/slotSuggestionRoute');
 const checkerRoutes = require("./routes/checkerRoute"); // <--- add this
 
+app.use(cors({
+    origin: ["https://timetable-generator-pink.vercel.app", "http://localhost:5173"], // Allow both origins
+    credentials: true,            //access-control-allow-credentials:true
+    optionSuccessStatus: 200
+}));
 // Increase JSON payload limit
 app.use(bodyParser.json({ limit: "50mb" })); // Increase to 50MB
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true })); // Increase for URL-encoded data
 
-app.use(cors());
+
 app.use(express.json());
 
 app.use("/upload", require("./routes/uploadRoutes"));
