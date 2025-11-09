@@ -5,7 +5,7 @@ const runPython = (fileBuffer) => {
     console.log(`Received file buffer of size: ${fileBuffer.length}`);
 
     return new Promise((resolve, reject) => {
-        const scriptPath = path.join(__dirname, "..", "python-scripts", "excel_Parser.py");
+        const scriptPath = path.join(__dirname, "..", "api", "excel_Parser.py");
         const pythonProcess = spawn("python", [scriptPath]);
 
         pythonProcess.stdin.write(fileBuffer);
