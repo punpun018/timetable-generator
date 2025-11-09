@@ -2,6 +2,9 @@ import { useLocation } from "react-router-dom";
 import React, { useState } from "react";
 import "../styles/TimetablePage.css";
 
+const production = import.meta.env.VITE_PRODUCTION;
+const BASE_URL = (production == 'true' ? import.meta.env.VITE_BASE_URL_BACKEND : 'http://localhost:5000');
+
 const TimetablePage = () => {
     const location = useLocation();
     const [validSlots, setValidSlots] = useState(null);
@@ -26,7 +29,7 @@ const TimetablePage = () => {
 
     const handleDownload = async () => {
         try {
-            const response = await fetch("http://localhost:5000/excel/generate-excel", {
+            const response = await fetch(`${BASE_URL}/excel/generate-excel`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -53,7 +56,7 @@ const TimetablePage = () => {
     const handleSubjectClick = async (subjectName) => {
         try {
             const cleanName = subjectName.split(" (")[0];
-            const response = await fetch("http://localhost:5000/api/slots", {
+            const response = await fetch(`${BASE_URL}/api/slots`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -125,7 +128,7 @@ const TimetablePage = () => {
             updatedTimetable.subjNames[newDay][newSlot].push(fullName);
 
 
-            const response = await fetch("http://localhost:5000/api/checker", {
+            const response = await fetch(`${BASE_URL}/api/checker`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -185,7 +188,7 @@ const TimetablePage = () => {
             updatedTimetable.subjNames[dayB][slotB] = tempNames;
 
             // Send to checker
-            const response = await fetch("http://localhost:5000/api/checker", {
+            const response = await fetch(`${BASE_URL}/api/checker`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

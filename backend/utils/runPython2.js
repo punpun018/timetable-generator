@@ -4,7 +4,7 @@ const path = require("path");
 function runPython2(jsonData) {
     console.log("python is running");
     return new Promise((resolve, reject) => {
-        const pythonScript = "C:\\Users\\ROMIT\\Desktop\\timetable-generator\\python-scripts\\json_to_excel.py";
+        const pythonScript = path.join(__dirname, "../python-scripts/json_to_excel.py");
 
         // Execute Python script and pass JSON data through stdin
         const process = execFile("python", [pythonScript], {

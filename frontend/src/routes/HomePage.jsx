@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { useDropzone } from "react-dropzone";
 import "../styles/HomePage.css";
 
+const production = import.meta.env.VITE_PRODUCTION;
+const BASE_URL = (production == 'true' ? import.meta.env.VITE_BASE_URL_BACKEND : 'http://localhost:5000');
+
 const HomePage = () => {
     const navigate = useNavigate();
     const [file, setFile] = useState(null);
@@ -30,7 +33,7 @@ const HomePage = () => {
         formData.append("slots", slots);
         formData.append("strength", strength);
 
-        fetch("http://localhost:5000/upload", {
+        fetch(`${BASE_URL}/upload`, {
             method: "POST",
             body: formData,
         })

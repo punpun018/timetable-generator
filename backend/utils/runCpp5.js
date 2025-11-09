@@ -1,11 +1,11 @@
 const { spawn } = require("child_process");
 const path = require("path");
 
-function runCppWithJson(inputJson) {
-    // console.log("Passing to C++:", JSON.stringify(inputJson, null, 2));
+function runCheckerWithJson(inputJson) {
     return new Promise((resolve, reject) => {
-        const exePath = path.join(__dirname, "..", "cpp-files", "generator.exe");
+        const exePath = path.join(__dirname, "..", "cpp-files", "checker2.exe");
         const cpp = spawn(exePath);
+
         let output = "";
         let errorOutput = "";
 
@@ -39,4 +39,4 @@ function runCppWithJson(inputJson) {
     });
 }
 
-module.exports = runCppWithJson;
+module.exports = runCheckerWithJson;

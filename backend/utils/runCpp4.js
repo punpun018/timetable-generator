@@ -1,11 +1,11 @@
 const { spawn } = require("child_process");
-const path = require("path");
 
 function runCppWithJson(inputJson) {
     // console.log("Passing to C++:", JSON.stringify(inputJson, null, 2));
     return new Promise((resolve, reject) => {
-        const exePath = path.join(__dirname, "..", "cpp-files", "generator.exe");
+        const exePath = path.join(__dirname, "..", "cpp-files", "generator2.exe");
         const cpp = spawn(exePath);
+
         let output = "";
         let errorOutput = "";
 

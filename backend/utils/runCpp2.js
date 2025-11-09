@@ -1,8 +1,11 @@
 const { spawn } = require("child_process");
+const path = require("path");
 
 function runCheckerWithJson(inputJson) {
     return new Promise((resolve, reject) => {
-        const cpp = spawn("./cpp-files/checker.exe");
+
+        const exePath = path.join(__dirname, "..", "cpp-files", "checker.exe");
+        const cpp = spawn(exePath);
         let output = "";
         let errorOutput = "";
 

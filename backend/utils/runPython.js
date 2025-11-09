@@ -1,10 +1,12 @@
 const { spawn } = require("child_process");
+const path = require("path");
 
 const runPython = (fileBuffer) => {
     console.log(`Received file buffer of size: ${fileBuffer.length}`);
 
     return new Promise((resolve, reject) => {
-        const pythonProcess = spawn("python", ["../timetable-generator/python-scripts/excel_Parser.py"]);
+        const scriptPath = path.join(__dirname, "..", "python-scripts", "excel_Parser.py");
+        const pythonProcess = spawn("python", [scriptPath]);
 
         pythonProcess.stdin.write(fileBuffer);
         pythonProcess.stdin.end();

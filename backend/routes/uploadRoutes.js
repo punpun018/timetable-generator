@@ -1,8 +1,10 @@
 const express = require("express");
 const multer = require("multer");
 const { runPython } = require("../utils/runPython");
-const runCppWithJson = require("../utils/runCpp"); 
+const runCppWithJson = require("../utils/runCpp");
 const runCpp2WithJson = require("../utils/runCpp2");
+const runCpp4WithJson = require("../utils/runCpp4");
+const runCpp5WithJson = require("../utils/runCpp5");
 const router = express.Router();
 
 const storage = multer.memoryStorage();
@@ -22,15 +24,19 @@ router.post("/", upload.single("file"), async (req, res) => {
         adjacencyGraph.adjacencyGraph.numberOfSlots = parseInt(slots);
         adjacencyGraph.adjacencyGraph.maxStrengthPerSlot = parseInt(strength);
 
-        // Step 2: Pass full JSON to C++
-        const finalTimetable = await runCppWithJson(adjacencyGraph);
+        console.log(adjacencyGraph.adjacencyGraph.numberOfSlots);
+        let finaloTimetable;
 
-        // Step 3: Pass full JSON to C++2
-        const finaloTimetable = await runCpp2WithJson(finalTimetable);
+        if (adjacencyGraph.adjacencyGraph.numberOfSlots == 2) {
+            const finalTimetable = await runCppWithJson(adjacencyGraph);
+            finaloTimetable = await runCpp2WithJson(finalTimetable);
+        } else {
+            // Example for slots != 2
+            const finalTimetable = await runCpp4WithJson(adjacencyGraph);
+            finaloTimetable = await runCpp5WithJson(finalTimetable);
+        }
 
-        // Step 4: Send timetable to frontend (this includes the config)
         res.json(finaloTimetable);
-
     } catch (error) {
         console.error("Error:", error);
         if (!res.headersSent) {
