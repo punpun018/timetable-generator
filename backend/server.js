@@ -22,6 +22,10 @@ app.use("/timetable", require("./routes/validateRoutes"));
 app.use("/excel", require("./routes/excelRoutes"));
 app.use('/api/slots', slotSuggestionRoutes);
 app.use("/api/checker", checkerRoutes); // <--- use it heres
+app.get("/", (req, res) => {
+    res.send("Backend is running ✅");
+});
+
 app.use('/health', () => {
     console.log("SERVER ON");
 })
