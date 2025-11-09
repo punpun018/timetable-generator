@@ -1,17 +1,21 @@
 import { useLocation } from "react-router-dom";
 import React, { useState } from "react";
+import axios from "axios";
 import "../styles/TimetablePage.css";
 
 const production = import.meta.env.VITE_PRODUCTION;
-const BASE_URL = (production == 'true' ? import.meta.env.VITE_BASE_URL_BACKEND : 'http://localhost:5000');
+const BASE_URL =
+    production === "true"
+        ? import.meta.env.VITE_BASE_URL_BACKEND
+        : "http://localhost:5000";
 
 const TimetablePage = () => {
     const location = useLocation();
     const [validSlots, setValidSlots] = useState(null);
     const [selectedSubject, setSelectedSubject] = useState(null);
-    const [timetableData, setTimetableData] = useState(location.state?.timetableData || {});
-    // const [swapDay1, setSwapDay1] = useState("");
-    // const [swapDay2, setSwapDay2] = useState("");
+    const [timetableData, setTimetableData] = useState(
+        location.state?.timetableData || {}
+    );
     const [swapSlotDayA, setSwapSlotDayA] = useState("");
     const [swapSlotDayB, setSwapSlotDayB] = useState("");
     const [swapSlotA, setSwapSlotA] = useState("");
@@ -19,27 +23,24 @@ const TimetablePage = () => {
     const [history, setHistory] = useState([]);
     const [redoStack, setRedoStack] = useState([]);
 
-
-
-
-
     if (!timetableData || Object.keys(timetableData).length === 0) {
         return <p className="p-4 text-red-500">No timetable data received.</p>;
     }
 
     const handleDownload = async () => {
         try {
-            const response = await fetch(`${BASE_URL}/excel/generate-excel`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(timetableData),
+            const response = await axios.post(
+                `${BASE_URL}/excel/generate-excel`,
+                timetableData,
+                {
+                    responseType: "blob",
+                    headers: { "Content-Type": "application/json" },
+                }
+            );
+
+            const blob = new Blob([response.data], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             });
-
-            if (!response.ok) throw new Error("Failed to download Excel");
-
-            const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
@@ -56,17 +57,18 @@ const TimetablePage = () => {
     const handleSubjectClick = async (subjectName) => {
         try {
             const cleanName = subjectName.split(" (")[0];
-            const response = await fetch(`${BASE_URL}/api/slots`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
+            const response = await axios.post(
+                `${BASE_URL}/api/slots`,
+                {
                     ...timetableData,
                     swap: { subject: cleanName },
-                }),
-            });
-            const data = await response.json();
+                },
+                {
+                    headers: { "Content-Type": "application/json" },
+                }
+            );
+
+            const data = response.data;
             console.log(data.swap.subject);
             console.log(data.swap.validSlots);
             setValidSlots(data.swap.validSlots);
@@ -85,9 +87,7 @@ const TimetablePage = () => {
 
             const subjectId = subjectEntry.id;
 
-
             let fullName = null;
-
             for (let d = 0; d < updatedTimetable.subjNames.length; d++) {
                 for (let s = 0; s < updatedTimetable.subjNames[d].length; s++) {
                     for (const name of updatedTimetable.subjNames[d][s]) {
@@ -103,7 +103,6 @@ const TimetablePage = () => {
             }
 
             if (!fullName) throw new Error("Full subject name not found in subjNames");
-
 
             let found = false;
             for (let d = 0; d < updatedTimetable.examTT.length; d++) {
@@ -123,36 +122,23 @@ const TimetablePage = () => {
                 if (found) break;
             }
 
-
             updatedTimetable.examTT[newDay][newSlot].push(subjectId);
             updatedTimetable.subjNames[newDay][newSlot].push(fullName);
 
-
-            const response = await fetch(`${BASE_URL}/api/checker`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(updatedTimetable),
+            const response = await axios.post(`${BASE_URL}/api/checker`, updatedTimetable, {
+                headers: { "Content-Type": "application/json" },
             });
 
-            if (!response.ok) throw new Error("Checker failed");
-
-            const newCheckedData = await response.json();
-
-            saveToHistory(newCheckedData);
-
+            saveToHistory(response.data);
 
             setValidSlots([]);
             setSelectedSubject(null);
-            setTimetableData(newCheckedData);
+            setTimetableData(response.data);
         } catch (err) {
             console.error("Failed to move subject:", err);
             alert("Move failed.");
         }
     };
-
-
 
     const handleSwapAnySlots = async () => {
         try {
@@ -164,46 +150,41 @@ const TimetablePage = () => {
             const updatedTimetable = JSON.parse(JSON.stringify(timetableData));
 
             if (
-                dayA < 0 || dayA >= updatedTimetable.examTT.length ||
-                dayB < 0 || dayB >= updatedTimetable.examTT.length ||
-                slotA < 0 || slotA >= updatedTimetable.slotsPerDay ||
-                slotB < 0 || slotB >= updatedTimetable.slotsPerDay
+                dayA < 0 ||
+                dayA >= updatedTimetable.examTT.length ||
+                dayB < 0 ||
+                dayB >= updatedTimetable.examTT.length ||
+                slotA < 0 ||
+                slotA >= updatedTimetable.slotsPerDay ||
+                slotB < 0 ||
+                slotB >= updatedTimetable.slotsPerDay
             ) {
                 alert("Invalid day or slot numbers.");
                 return;
             }
-
 
             const originalState = JSON.parse(JSON.stringify(timetableData));
             saveToHistory(originalState);
 
             // Swap examTT
             const tempExam = updatedTimetable.examTT[dayA][slotA];
-            updatedTimetable.examTT[dayA][slotA] = updatedTimetable.examTT[dayB][slotB];
+            updatedTimetable.examTT[dayA][slotA] =
+                updatedTimetable.examTT[dayB][slotB];
             updatedTimetable.examTT[dayB][slotB] = tempExam;
 
             // Swap subjNames
             const tempNames = updatedTimetable.subjNames[dayA][slotA];
-            updatedTimetable.subjNames[dayA][slotA] = updatedTimetable.subjNames[dayB][slotB];
+            updatedTimetable.subjNames[dayA][slotA] =
+                updatedTimetable.subjNames[dayB][slotB];
             updatedTimetable.subjNames[dayB][slotB] = tempNames;
 
-            // Send to checker
-            const response = await fetch(`${BASE_URL}/api/checker`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(updatedTimetable),
+            const response = await axios.post(`${BASE_URL}/api/checker`, updatedTimetable, {
+                headers: { "Content-Type": "application/json" },
             });
 
-            if (!response.ok) throw new Error("Checker failed");
+            saveToHistory(response.data);
 
-            const newCheckedData = await response.json();
-
-            // Save to history here after the fetch response
-            saveToHistory(newCheckedData);
-
-            setTimetableData(newCheckedData);
+            setTimetableData(response.data);
             setSwapSlotDayA("");
             setSwapSlotDayB("");
             setSwapSlotA("");
@@ -214,9 +195,8 @@ const TimetablePage = () => {
         }
     };
 
-
     const saveToHistory = (newData) => {
-        setHistory(prev => [...prev, timetableData]);
+        setHistory((prev) => [...prev, timetableData]);
         setRedoStack([]);
         setTimetableData(newData);
     };
@@ -237,7 +217,6 @@ const TimetablePage = () => {
         setTimetableData(nextState);
     };
 
-
     return (
         <div className="timetable-container">
             <h1 className="text-3xl font-bold mb-4 x">TIMETABLE</h1>
@@ -253,7 +232,9 @@ const TimetablePage = () => {
                 <tbody>
                     {timetableData.subjNames.map((daySlots, dayIdx) => (
                         <tr key={dayIdx}>
-                            <td><strong>DAY {dayIdx + 1}</strong></td>
+                            <td>
+                                <strong>DAY {dayIdx + 1}</strong>
+                            </td>
                             {daySlots.map((subjects, slotIdx) => (
                                 <td key={slotIdx}>
                                     <div className="subject-grid">
@@ -278,66 +259,75 @@ const TimetablePage = () => {
                 </tbody>
             </table>
 
-            {/* Checker Summary */}
-            <div style={{ display: "flex", alignItems: "center", width: "100%", justifyContent: "center" }}>
-                {Array.isArray(timetableData.Summary) && timetableData.Summary.length === 3 && (
-                    <div className="summary-container">
-                        <div className="summary-container2">
-                            <div className="summary-box low">
-                                <p>Students with exactly 2 exams on a day:</p>
-                                <p><strong>{timetableData.Summary[0]} instances</strong></p>
+            {/* Summary */}
+            <div style={{ display: "flex", justifyContent: "center" }}>
+                {Array.isArray(timetableData.Summary) &&
+                    timetableData.Summary.length === 3 && (
+                        <div className="summary-container">
+                            <div className="summary-container2">
+                                <div className="summary-box low">
+                                    <p>Students with exactly 2 exams on a day:</p>
+                                    <p>
+                                        <strong>{timetableData.Summary[0]} instances</strong>
+                                    </p>
+                                </div>
+                                <div className="summary-box medium">
+                                    <p>Students with 3 exams on two consecutive days:</p>
+                                    <p>
+                                        <strong>{timetableData.Summary[1]} instances</strong>
+                                    </p>
+                                </div>
+                                <div className="summary-box high">
+                                    <p>Students with 4 exams on two consecutive days:</p>
+                                    <p>
+                                        <strong>{timetableData.Summary[2]} instances</strong>
+                                    </p>
+                                </div>
                             </div>
-                            <div className="summary-box medium">
-                                <p>Students with 3 exams on two consecutive days:</p>
-                                <p><strong>{timetableData.Summary[1]} instances</strong></p>
-                            </div>
-                            <div className="summary-box high">
-                                <p>Students with 4 exams on two consecutive days:</p>
-                                <p><strong>{timetableData.Summary[2]} instances</strong></p>
-                            </div>
-                        </div>
 
-                        {validSlots && (
-                            <div className="summary-box" style={{ marginTop: "20px" }}>
-                                <p><strong>Valid slots for "{selectedSubject}":</strong></p>
-                                <ul style={{ padding: 0, listStyle: "none" }}>
-                                    {validSlots.map(([day, slot], idx) => (
-                                        <li
-                                            key={idx}
-                                            style={{
-                                                marginBottom: "8px",
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
-                                                gap: "10px"
-                                            }}
-                                        >
-                                            <span>Day {day + 1}, Slot {slot + 1}</span>
-                                            <button
-                                                onClick={() => handleMoveSubject(day, slot)}
+                            {validSlots && (
+                                <div className="summary-box" style={{ marginTop: "20px" }}>
+                                    <p>
+                                        <strong>Valid slots for "{selectedSubject}":</strong>
+                                    </p>
+                                    <ul style={{ padding: 0, listStyle: "none" }}>
+                                        {validSlots.map(([day, slot], idx) => (
+                                            <li
+                                                key={idx}
                                                 style={{
-                                                    padding: "4px 10px",
-                                                    backgroundColor: "#4CAF50",
-                                                    color: "white",
-                                                    border: "none",
-                                                    borderRadius: "4px",
-                                                    cursor: "pointer",
-                                                    whiteSpace: "nowrap"
+                                                    marginBottom: "8px",
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    alignItems: "center",
+                                                    gap: "10px",
                                                 }}
                                             >
-                                                Move
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-
-                    </div>
-                )}
+                                                <span>
+                                                    Day {day + 1}, Slot {slot + 1}
+                                                </span>
+                                                <button
+                                                    onClick={() => handleMoveSubject(day, slot)}
+                                                    style={{
+                                                        padding: "4px 10px",
+                                                        backgroundColor: "#4CAF50",
+                                                        color: "white",
+                                                        border: "none",
+                                                        borderRadius: "4px",
+                                                        cursor: "pointer",
+                                                    }}
+                                                >
+                                                    Move
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    )}
             </div>
 
-
+            {/* Swap Section */}
             <div className="summary-box" style={{ marginTop: "20px" }}>
                 <h3 className="font-semibold mb-2">Swap Slots Between Days</h3>
                 <div className="flex flex-col gap-2">
@@ -377,8 +367,11 @@ const TimetablePage = () => {
                 </div>
             </div>
 
-
-            <button className="undo-button" onClick={handleUndo} disabled={history.length === 0}>
+            <button
+                className="undo-button"
+                onClick={handleUndo}
+                disabled={history.length === 0}
+            >
                 ↺ Undo
             </button>
             <button
@@ -390,7 +383,7 @@ const TimetablePage = () => {
                 ↻ Redo
             </button>
 
-            <div style={{ display: "flex", alignItems: "center", width: "100%", justifyContent: "center" }}>
+            <div style={{ display: "flex", justifyContent: "center" }}>
                 <button className="download-btn" onClick={handleDownload}>
                     Download Excel
                 </button>
