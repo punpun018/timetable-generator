@@ -26,7 +26,7 @@ app.get("/", (req, res) => {
     res.send("Backend is running ✅");
 });
 
-app.use('/health', () => {
+app.get('/health', () => {
     console.log("SERVER ON");
 })
 const PORT = 5000;
