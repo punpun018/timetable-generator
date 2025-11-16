@@ -6,7 +6,7 @@ const slotSuggestionRoutes = require('./routes/slotSuggestionRoute');
 const checkerRoutes = require("./routes/checkerRoute"); // <--- add this
 
 app.use(cors({
-    origin: ["https://timetable-generator-pink.vercel.app", "http://localhost:5173"], // Allow both origins
+    origin: ["https://timetable-generator-new-olive.vercel.app", "http://localhost:5173"], // Allow both origins
     methods: ['GET', 'PUT', 'POST', 'FETCH', 'DELETE'],
     credentials: true,            //access-control-allow-credentials:true
     optionSuccessStatus: 200

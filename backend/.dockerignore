@@ -1,0 +1,65 @@
+# Node modules
+node_modules
+npm-debug.log
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.py[cod]
+*$py.class
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Logs
+logs
+*.log
+
+# Testing
+coverage
+.nyc_output
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# Vercel
+vercel.json
+.vercel
+
+# C++ object files (we'll compile in Docker)
+cpp-files/*.o
+cpp-files/*.out
+
+# Keep compiled executables pattern but exclude if you want fresh builds
+# cpp-files/generator
+# cpp-files/generator2
+# cpp-files/checker
+# cpp-files/checker2
+# cpp-files/slot_suggester
