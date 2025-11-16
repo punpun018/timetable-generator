@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <tuple>
 #include <algorithm>
+#include <climits>
 #include "json.hpp"
 
 using json = nlohmann::json;
