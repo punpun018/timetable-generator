@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
 const slotSuggestionRoutes = require('./routes/slotSuggestionRoute');
-const checkerRoutes = require("./routes/checkerRoute"); // <--- add this
+const checkerRoutes = require("./routes/checkerRoute");
 
 app.use(cors({
     origin: ["https://timetable-generator-new-olive.vercel.app", "http://localhost:5173"], // Allow both origins
@@ -20,9 +20,10 @@ app.use(express.json());
 
 app.use("/upload", require("./routes/uploadRoutes"));
 app.use("/timetable", require("./routes/validateRoutes"));
-app.use("/excel", require("./routes/excelRoutes"));
+const excelRoutes = require("./routes/excelRoutes");
+app.use("/excel", excelRoutes);
 app.use('/api/slots', slotSuggestionRoutes);
-app.use("/api/checker", checkerRoutes); // <--- use it heres
+app.use("/api/checker", checkerRoutes);
 app.get("/", (req, res) => {
     res.send("Backend is running ✅");
 });

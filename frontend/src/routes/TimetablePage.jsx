@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "../styles/TimetablePage.css";
 
@@ -16,6 +16,10 @@ const TimetablePage = () => {
     const [timetableData, setTimetableData] = useState(
         location.state?.timetableData || {}
     );
+
+    // Safe initialization of stats
+    const [stats, setStats] = useState(null);
+
     const [swapSlotDayA, setSwapSlotDayA] = useState("");
     const [swapSlotDayB, setSwapSlotDayB] = useState("");
     const [swapSlotA, setSwapSlotA] = useState("");
@@ -23,20 +27,41 @@ const TimetablePage = () => {
     const [history, setHistory] = useState([]);
     const [redoStack, setRedoStack] = useState([]);
 
+    // Update stats whenever timetableData changes
+    useEffect(() => {
+        if (timetableData && Array.isArray(timetableData.Summary) && timetableData.Summary.length >= 9) {
+            setStats(timetableData.Summary);
+        } else {
+            setStats(null);
+        }
+    }, [timetableData]);
+
     if (!timetableData || Object.keys(timetableData).length === 0) {
         return <p className="p-4 text-red-500">No timetable data received.</p>;
     }
 
     const handleDownload = async () => {
+        console.log("frontend working fine");
         try {
+            // Ensure we send a clean object. If Summary is missing, the backend might need a default or just ignore it.
+            // We construct a payload that includes what we have.
+            const payload = { ...timetableData };
+
+            // If Summary is missing, we can optionally add a dummy one if the backend STRICTLY requires it, 
+            // otherwise we send it as is. 
+            if (!payload.Summary) {
+                payload.Summary = [0, 0, 0, 0, 0, 0, 0, 0, 0]; // Default dummy stats to prevent backend crash
+            }
+
             const response = await axios.post(
-                `${BASE_URL}/excel/generate-excel`,
-                timetableData,
+                `${BASE_URL}/excel/download-excel`,
+                payload,
                 {
                     responseType: "blob",
                     headers: { "Content-Type": "application/json" },
                 }
             );
+
 
             const blob = new Blob([response.data], {
                 type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -50,7 +75,7 @@ const TimetablePage = () => {
             link.remove();
         } catch (err) {
             console.error("Download failed:", err);
-            alert("Failed to download Excel");
+            alert("Failed to download Excel. Check console for details.");
         }
     };
 
@@ -69,8 +94,6 @@ const TimetablePage = () => {
             );
 
             const data = response.data;
-            console.log(data.swap.subject);
-            console.log(data.swap.validSlots);
             setValidSlots(data.swap.validSlots);
             setSelectedSubject(cleanName);
         } catch (err) {
@@ -224,13 +247,14 @@ const TimetablePage = () => {
                 <thead>
                     <tr>
                         <th>DAY</th>
-                        {[...Array(timetableData.slotsPerDay)].map((_, slotIdx) => (
+                        {/* Safely map slots based on data available */}
+                        {[...Array(timetableData.slotsPerDay || 3)].map((_, slotIdx) => (
                             <th key={slotIdx}>SLOT {slotIdx + 1}</th>
                         ))}
                     </tr>
                 </thead>
                 <tbody>
-                    {timetableData.subjNames.map((daySlots, dayIdx) => (
+                    {timetableData.subjNames && timetableData.subjNames.map((daySlots, dayIdx) => (
                         <tr key={dayIdx}>
                             <td>
                                 <strong>DAY {dayIdx + 1}</strong>
@@ -259,72 +283,107 @@ const TimetablePage = () => {
                 </tbody>
             </table>
 
-            {/* Summary */}
-            <div style={{ display: "flex", justifyContent: "center" }}>
-                {Array.isArray(timetableData.Summary) &&
-                    timetableData.Summary.length === 3 && (
-                        <div className="summary-container">
-                            <div className="summary-container2">
-                                <div className="summary-box low">
-                                    <p>Students with exactly 2 exams on a day:</p>
-                                    <p>
-                                        <strong>{timetableData.Summary[0]} instances</strong>
-                                    </p>
-                                </div>
-                                <div className="summary-box medium">
-                                    <p>Students with 3 exams on two consecutive days:</p>
-                                    <p>
-                                        <strong>{timetableData.Summary[1]} instances</strong>
-                                    </p>
-                                </div>
-                                <div className="summary-box high">
-                                    <p>Students with 4 exams on two consecutive days:</p>
-                                    <p>
-                                        <strong>{timetableData.Summary[2]} instances</strong>
-                                    </p>
+            {/* Summary Section - Conditionally Rendered */}
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "20px" }}>
+                <div className="summary-container" style={{ flexDirection: 'column', gap: '20px' }}>
+
+                    {/* Only show stats if they exist in the data */}
+                    {stats ? (
+                        <>
+                            <div>
+                                <h3 className="text-xl font-bold mb-2 text-center" style={{ color: '#333' }}>Daily Load (Exams per Day)</h3>
+                                <div className="summary-container2" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px' }}>
+                                    <div className="summary-box low">
+                                        <p>2 Exams in 1 Day</p>
+                                        <p><strong>{stats[0]} students</strong></p>
+                                    </div>
+                                    <div className="summary-box medium">
+                                        <p>3 Exams in 1 Day</p>
+                                        <p><strong>{stats[1]} students</strong></p>
+                                    </div>
+                                    <div className="summary-box high">
+                                        <p>4 Exams in 1 Day</p>
+                                        <p><strong>{stats[2]} students</strong></p>
+                                    </div>
                                 </div>
                             </div>
 
-                            {validSlots && (
-                                <div className="summary-box" style={{ marginTop: "20px" }}>
-                                    <p>
-                                        <strong>Valid slots for "{selectedSubject}":</strong>
-                                    </p>
-                                    <ul style={{ padding: 0, listStyle: "none" }}>
-                                        {validSlots.map(([day, slot], idx) => (
-                                            <li
-                                                key={idx}
-                                                style={{
-                                                    marginBottom: "8px",
-                                                    display: "flex",
-                                                    justifyContent: "space-between",
-                                                    alignItems: "center",
-                                                    gap: "10px",
-                                                }}
-                                            >
-                                                <span>
-                                                    Day {day + 1}, Slot {slot + 1}
-                                                </span>
-                                                <button
-                                                    onClick={() => handleMoveSubject(day, slot)}
-                                                    style={{
-                                                        padding: "4px 10px",
-                                                        backgroundColor: "#4CAF50",
-                                                        color: "white",
-                                                        border: "none",
-                                                        borderRadius: "4px",
-                                                        cursor: "pointer",
-                                                    }}
-                                                >
-                                                    Move
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
+                            <div>
+                                <h3 className="text-xl font-bold mb-2 text-center" style={{ color: '#333' }}>Consecutive Load (Total Exams in 2 Days)</h3>
+                                <div className="summary-container2" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px' }}>
+                                    <div className="summary-box low">
+                                        <p>3 Exams / 2 Days</p>
+                                        <p><strong>{stats[3]} students</strong></p>
+                                    </div>
+                                    <div className="summary-box low">
+                                        <p>4 Exams / 2 Days</p>
+                                        <p><strong>{stats[4]} students</strong></p>
+                                    </div>
+                                    <div className="summary-box medium">
+                                        <p>5 Exams / 2 Days</p>
+                                        <p><strong>{stats[5]} students</strong></p>
+                                    </div>
+                                    <div className="summary-box medium">
+                                        <p>6 Exams / 2 Days</p>
+                                        <p><strong>{stats[6]} students</strong></p>
+                                    </div>
+                                    <div className="summary-box high">
+                                        <p>7 Exams / 2 Days</p>
+                                        <p><strong>{stats[7]} students</strong></p>
+                                    </div>
+                                    <div className="summary-box high">
+                                        <p>8 Exams / 2 Days</p>
+                                        <p><strong>{stats[8]} students</strong></p>
+                                    </div>
                                 </div>
-                            )}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="text-gray-500 text-center p-4">
+
                         </div>
                     )}
+
+                    {/* Valid Slots for Selected Subject - Always render if selected */}
+                    {validSlots && (
+                        <div className="summary-box" style={{ marginTop: "20px", width: '100%' }}>
+                            <p>
+                                <strong>Valid slots for "{selectedSubject}":</strong>
+                            </p>
+                            <ul style={{ padding: 0, listStyle: "none" }}>
+                                {validSlots.map(([day, slot], idx) => (
+                                    <li
+                                        key={idx}
+                                        style={{
+                                            marginBottom: "8px",
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            alignItems: "center",
+                                            gap: "10px",
+                                        }}
+                                    >
+                                        <span>
+                                            Day {day + 1}, Slot {slot + 1}
+                                        </span>
+                                        <button
+                                            onClick={() => handleMoveSubject(day, slot)}
+                                            style={{
+                                                padding: "4px 10px",
+                                                backgroundColor: "#4CAF50",
+                                                color: "white",
+                                                border: "none",
+                                                borderRadius: "4px",
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            Move
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Swap Section */}

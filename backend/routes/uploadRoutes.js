@@ -4,7 +4,8 @@ const { runPython } = require("../utils/runPython");
 const runCppWithJson = require("../utils/runCpp");
 const runCpp2WithJson = require("../utils/runCpp2");
 const runCpp4WithJson = require("../utils/runCpp4");
-const runCpp5WithJson = require("../utils/runCpp5");
+const runCpp6WithJson = require("../utils/runCpp6");
+// const runCpp5WithJson = require("../utils/runCpp5");
 const router = express.Router();
 
 const storage = multer.memoryStorage();
@@ -30,10 +31,15 @@ router.post("/", upload.single("file"), async (req, res) => {
         if (adjacencyGraph.adjacencyGraph.numberOfSlots == 2) {
             const finalTimetable = await runCppWithJson(adjacencyGraph);
             finaloTimetable = await runCpp2WithJson(finalTimetable);
-        } else {
+        } else if (adjacencyGraph.adjacencyGraph.numberOfSlots == 3) {
             // Example for slots != 2
             const finalTimetable = await runCpp4WithJson(adjacencyGraph);
-            finaloTimetable = await runCpp5WithJson(finalTimetable);
+            finaloTimetable = await runCpp2WithJson(finalTimetable);
+        }
+        else if (adjacencyGraph.adjacencyGraph.numberOfSlots == 4) {
+            // Example for slots != 2
+            const finalTimetable = await runCpp6WithJson(adjacencyGraph);
+            finaloTimetable = await runCpp2WithJson(finalTimetable);
         }
 
         res.json(finaloTimetable);

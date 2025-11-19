@@ -4,7 +4,7 @@ const path = require('path');
 function runCppWithJson(inputJson) {
     // console.log("Passing to C++:", JSON.stringify(inputJson, null, 2));
     return new Promise((resolve, reject) => {
-        const exePath = path.join(__dirname, "..", "cpp-files", "generator2");
+        const exePath = path.join(__dirname, "..", "cpp-files", "generator3");
         const cpp = spawn(exePath);
 
         let output = "";

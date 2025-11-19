@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <climits>
 #include "json.hpp"
-
 using json = nlohmann::json;
 using namespace std;
 
@@ -132,17 +131,21 @@ void Input2()
     }
 }
 
-int getTwoExams()
+tuple<int, int, int> getTwoExams()
 {
-    int ct = 0;
+    int ct1 = 0, ct2 = 0, ct3 = 0;
     for (int i = 0; i < students; i++)
-        ct += count(Summary[i].exams.begin(), Summary[i].exams.end(), 2);
-    return ct;
+    {
+        ct1 += count(Summary[i].exams.begin(), Summary[i].exams.end(), 2);
+        ct2 += count(Summary[i].exams.begin(), Summary[i].exams.end(), 3);
+        ct3 += count(Summary[i].exams.begin(), Summary[i].exams.end(), 4);
+    }
+    return {ct1, ct2, ct3};
 }
 
-pair<int, int> getSumm()
+tuple<int, int, int, int, int, int> getSumm()
 {
-    int ct1 = 0, ct2 = 0;
+    int ct1 = 0, ct2 = 0, ct3 = 0, ct4 = 0, ct5 = 0, ct6 = 0;
     for (int i = 0, num; i < students; i++)
         for (int j = 0; j < days - 1; j++)
         {
@@ -151,8 +154,16 @@ pair<int, int> getSumm()
                 ct1++;
             if (num == 4)
                 ct2++;
+            if (num == 5)
+                ct3++;
+            if (num == 6)
+                ct4++;
+            if (num == 7)
+                ct5++;
+            if (num == 8)
+                ct6++;
         }
-    return {ct1, ct2};
+    return {ct1, ct2, ct3, ct4, ct5, ct6};
 }
 
 void updateTT()
@@ -188,10 +199,9 @@ void updateTT()
         {
             for (int j = 0; j < examPerDay; j++)
             {
-                if (timeTable[d][j].Students.find(i) != timeTable[d][j].Students.end())
+               if (timeTable[d][j].Students.find(i) != timeTable[d][j].Students.end())
                     Summary[i].exams[d]++;
-                for (auto it : timeTable[d][j].Subjects)
-                {
+                for (auto it : timeTable[d][j].Subjects) {
                     if (studentData[i].subjectsEnrolled.find(it) != studentData[i].subjectsEnrolled.end())
                         Summary[i].subs[d].push_back(subjectData[it].Name);
                 }
@@ -221,12 +231,13 @@ void outJSON()
     json outJS;
     outJS["adjacencyGraph"] = jsonData["adjacencyGraph"];
     outJS["days"] = jsonData["examTT"].size();
-    outJS["slotsPerDay"] = examPerDay;
     outJS["examTT"] = jsonData["examTT"];
     outJS["subjNames"] = jsonData["subjNames"];
     outJS["timeTable"] = vvs;
     outJS["timeTableSummary"] = Summary;
-    outJS["Summary"] = {getTwoExams(), getSumm().first, getSumm().second};
+    auto [x, y, z] = getTwoExams();
+    auto [a, b, c, d, e, f] = getSumm();
+    outJS["Summary"] = {x, y, z, a, b, c, d, e, f};
     cout << outJS.dump(1) << endl;
 }
 

@@ -6,9 +6,8 @@
 #include <tuple>
 #include <algorithm>
 #include <climits>
-#include <numeric> 
+#include <numeric>
 #include "json.hpp"
-
 using json = nlohmann::json;
 using namespace std;
 
@@ -75,6 +74,7 @@ void Input(json &jsonData)
     }
 
     int i = 0;
+    // C++14: Replaced structured binding with iterator loop
     for (auto& element : jsonData["adjacencyGraph"]["courses"].items())
     {
         s = element.key();
@@ -82,7 +82,7 @@ void Input(json &jsonData)
         
         id = course_details["id"];
         if (id != i)
-            cout << "Fail";
+            cerr << "Fail"; // Changed to cerr to avoid corrupting JSON output
         str = course_details["size"];
         subjectData[i].Name = s;
         subjectData[i].hash = id;
@@ -90,6 +90,7 @@ void Input(json &jsonData)
     }
 
     i = 0;
+    // C++14: Replaced structured binding with iterator loop
     for (auto& element : jsonData["adjacencyGraph"]["students"].items())
     {
         s = element.key();
@@ -139,14 +140,14 @@ void optimizeTT()
 {
     for (int i = 0; i < days; i++)
     {
-        for (int s = 0; s < 3; s++)
+        for (int s = 0; s < 4; s++)
         {
             int ct = 50;
             while (ct-- && TT[i][s].strength > limit)
             {
                 for (auto it : TT[i][s].Subjects)
                 {
-                    for (int j = 0; j < 3; j++)
+                    for (int j = 0; j < 4; j++)
                         if (j != s)
                         {
                             bool canPlace = true;
@@ -170,10 +171,10 @@ void optimizeTT()
 
     set<int> clashes;
     for (int i = 0; i < days; i++)
-        for (int j = 0; j < 3; j++)
-            for (int k = j + 1; k < 3; k++)
-                for (auto it : TT[i][j].Subjects)
-                    for (auto itr : TT[i][k].Subjects)
+        for (int a = 0; a < 4; a++)
+            for (int b = a + 1; b < 4; b++)
+                for (auto it : TT[i][a].Subjects)
+                    for (auto itr : TT[i][b].Subjects)
                         if (adjMatrix[it][itr])
                         {
                             clashes.insert(it);
@@ -190,8 +191,9 @@ void optimizeTT()
     {
         for (int i = 0; i < days; i++)
         {
-            for (int j = 0; j < 3; j++)
+            for (int j = 0; j < 4; j++)
             {
+                // C++14: Replaced .contains() with .count() > 0
                 if (TT[i][j].Subjects.count(it) > 0)
                 {
                     TT[i][j].Subjects.erase(it);
@@ -205,7 +207,7 @@ void optimizeTT()
         int minClashes = INT_MAX, cx = 0, cy = 0;
         for (int i = 0; i < days; i++)
         {
-            for (int j = 0; j < 3; j++)
+            for (int j = 0; j < 4; j++)
             {
                 bool canPlace = true;
                 for (auto itr : TT[i][j].Subjects)
@@ -214,7 +216,7 @@ void optimizeTT()
                 if (canPlace)
                 {
                     int tempClashes = 0;
-                    for (int k = 0; k < 3; k++)
+                    for (int k = 0; k < 4; k++)
                         if (k != j)
                             for (auto itr : TT[i][k].Subjects)
                                 tempClashes += adjMatrix[it][itr];
@@ -236,14 +238,14 @@ void optimizeTT()
 
     for (int i = 0; i < days; i++)
     {
-        for (int s = 0; s < 3; s++)
+        for (int s = 0; s < 4; s++)
         {
             int ct = 50;
             while (ct-- && TT[i][s].strength > limit)
             {
                 for (auto it : TT[i][s].Subjects)
                 {
-                    for (int j = 0; j < 3; j++)
+                    for (int j = 0; j < 4; j++)
                         if (j != s)
                         {
                             bool canPlace = true;
@@ -265,17 +267,16 @@ void optimizeTT()
         }
     }
 
-    // --- NEW STEP: Balance slots within the same day ---
     for (int i = 0; i < days; i++)
     {
-        for (int s = 0; s < 3; s++)
+        for (int s = 0; s < 4; s++)
         {
             while (TT[i][s].strength > limit)
             {
                 bool moved = false;
                 for (auto it : TT[i][s].Subjects)
                 {
-                    for (int j = 0; j < 3; j++)
+                    for (int j = 0; j < 4; j++)
                         if (j != s && TT[i][j].strength + subjectData[it].strength <= limit)
                         {
                             bool canPlace = true;
@@ -304,70 +305,132 @@ void optimizeTT()
     }
 }
 
-vector<tuple<int, int, int>> minimizeSlotClashes3(const vvi &confMatrix, const vector<vvi> &confMatrix2)
+vector<tuple<int, int, int, int>> minimizeSlotClashes4(const vvi &confMatrix,
+                                                       const vector<vvi> &confMatrix2,
+                                                       const vector<vector<vector<vector<int>>>> &confMatrix3)
 {
     int n = confMatrix.size();
-    if (n % 3 != 0)
+    if (n % 4 != 0)
     {
-        throw invalid_argument("Number of slots must be divisible by 3.");
+        throw invalid_argument("Number of slots must be divisible by 4.");
     }
 
-    const int INF = 1e9;
-    int maxMask = 1 << n;
-    vi dp(maxMask, INF);
-    vector<int> choice(maxMask, -1);
-    dp[0] = 0;
+    vector<bool> used(n, false);
+    vector<tuple<int, int, int, int>> result;
 
-    for (int mask = 0; mask < maxMask; ++mask)
+    for (int iter = 0; iter < n / 4; ++iter)
     {
-        int cnt = __builtin_popcount(mask);
-        if (cnt % 3 != 0)
-            continue;
-
-        int i;
-        for (i = 0; i < n; ++i)
-            if (mask & (1 << i))
-                break;
-
-        for (int j = i + 1; j < n; ++j)
-        {
-            if (!(mask & (1 << j)))
-                continue;
-            for (int k = j + 1; k < n; ++k)
+        int i = -1;
+        int maxSum = -1;
+        for (int x = 0; x < n; ++x)
+            if (!used[x])
             {
-                if (!(mask & (1 << k)))
-                    continue;
+                int sum = 0;
+                for (int y = 0; y < n; ++y)
+                    if (!used[y])
+                        sum += confMatrix[x][y];
+                if (sum > maxSum)
+                    maxSum = sum, i = x;
+            }
 
-                int newMask = mask ^ (1 << i) ^ (1 << j) ^ (1 << k);
+        int bestj = -1, bestk = -1, bestl = -1;
+        int bestCost = INT_MAX;
 
-                int cost = 500 * confMatrix2[i][j][k] + confMatrix[i][j] + confMatrix[i][k] + confMatrix[j][k] + dp[newMask];
+        for (int j = 0; j < n; ++j)
+            if (!used[j] && j != i)
+                for (int k = j + 1; k < n; ++k)
+                    if (!used[k] && k != i)
+                        for (int l = k + 1; l < n; ++l)
+                            if (!used[l] && l != i)
+                            {
 
-                if (cost < dp[mask])
+                                int cost = 10000 * confMatrix3[i][j][k][l] + 500 * (confMatrix2[i][j][k] + confMatrix2[i][j][l] + confMatrix2[i][k][l] + confMatrix2[j][k][l]) + confMatrix[i][j] + confMatrix[i][k] + confMatrix[i][l] + confMatrix[j][k] + confMatrix[j][l] + confMatrix[k][l];
+
+                                if (cost < bestCost)
+                                {
+                                    bestCost = cost;
+                                    bestj = j;
+                                    bestk = k;
+                                    bestl = l;
+                                }
+                            }
+
+        if (i == -1 || bestj == -1 || bestk == -1 || bestl == -1)
+            break;
+
+        result.emplace_back(i, bestj, bestk, bestl);
+        used[i] = used[bestj] = used[bestk] = used[bestl] = true;
+    }
+
+    return result;
+}
+
+vector<vector<vector<vector<int>>>> buildConfMatrix4(const vector<Partition> &Slots, const vector<Student> &studentData)
+{
+    int n = Slots.size();
+    vector<vector<vector<vector<int>>>> confMatrix3(n, vector<vector<vector<int>>>(n, vector<vector<int>>(n, vector<int>(n, 0))));
+
+    for (const auto &student : studentData)
+    {
+        vector<int> enrolledSlots;
+        for (int subj : student.subjectsEnrolled)
+        {
+            for (int s = 0; s < n; s++)
+            {
+                if (Slots[s].Subjects.count(subj))
                 {
-                    dp[mask] = cost;
-                    choice[mask] = (i << 20) | (j << 10) | k;
+                    enrolledSlots.push_back(s);
+                }
+            }
+        }
+
+        int m = enrolledSlots.size();
+        for (int a = 0; a < m; a++)
+        {
+            for (int b = a + 1; b < m; b++)
+            {
+                for (int c = b + 1; c < m; c++)
+                {
+                    for (int d = c + 1; d < m; d++)
+                    {
+                        int i = enrolledSlots[a];
+                        int j = enrolledSlots[b];
+                        int k = enrolledSlots[c];
+                        int l = enrolledSlots[d];
+                        confMatrix3[i][j][k][l]++;
+                        confMatrix3[i][j][l][k]++;
+                        confMatrix3[i][k][j][l]++;
+                        confMatrix3[i][k][l][j]++;
+                        confMatrix3[i][l][j][k]++;
+                        confMatrix3[i][l][k][j]++;
+
+                        confMatrix3[j][i][k][l]++;
+                        confMatrix3[j][i][l][k]++;
+                        confMatrix3[j][k][i][l]++;
+                        confMatrix3[j][k][l][i]++;
+                        confMatrix3[j][l][i][k]++;
+                        confMatrix3[j][l][k][i]++;
+
+                        confMatrix3[k][i][j][l]++;
+                        confMatrix3[k][i][l][j]++;
+                        confMatrix3[k][j][i][l]++;
+                        confMatrix3[k][j][l][i]++;
+                        confMatrix3[k][l][i][j]++;
+                        confMatrix3[k][l][j][i]++;
+
+                        confMatrix3[l][i][j][k]++;
+                        confMatrix3[l][i][k][j]++;
+                        confMatrix3[l][j][i][k]++;
+                        confMatrix3[l][j][k][i]++;
+                        confMatrix3[l][k][i][j]++;
+                        confMatrix3[l][k][j][i]++;
+                    }
                 }
             }
         }
     }
 
-    vector<tuple<int, int, int>> result;
-    int mask = maxMask - 1;
-    while (mask)
-    {
-        int packed = choice[mask];
-        int i = (packed >> 20) & 1023;
-        int j = (packed >> 10) & 1023;
-        int k = packed & 1023;
-
-        result.emplace_back(i, j, k);
-
-        mask ^= (1 << i);
-        mask ^= (1 << j);
-        mask ^= (1 << k);
-    }
-
-    return result;
+    return confMatrix3;
 }
 
 vector<vvi> buildConfMatrix3(const vector<Partition> &Slots, const vector<Student> &studentData)
@@ -413,7 +476,7 @@ vector<vvi> buildConfMatrix3(const vector<Partition> &Slots, const vector<Studen
     return confMatrix2;
 }
 
-void makeTT3()
+void makeTT4()
 {
     int n = totalSlots;
     vector<vi> confMatrix(n, vi(n, 0));
@@ -430,16 +493,18 @@ void makeTT3()
     }
 
     auto confMatrix2 = buildConfMatrix3(Slots, studentData);
-    auto triplets = minimizeSlotClashes3(confMatrix, confMatrix2);
+    auto confMatrix3 = buildConfMatrix4(Slots, studentData);
+    auto quadruplets = minimizeSlotClashes4(confMatrix, confMatrix2, confMatrix3);
 
     TT.clear();
     TT.resize(days, vector<Partition>(examPerDay));
 
     for (int d = 0; d < days; d++)
     {
-        int a, b, c;
-        tie(a, b, c) = triplets[d];
-        
+        // C++14: Replaced structured binding with std::tie
+        int a, b, c, e;
+        tie(a, b, c, e) = quadruplets[d];
+
         for (auto it : Slots[a].Subjects)
         {
             TT[d][0].Subjects.insert(it);
@@ -454,6 +519,11 @@ void makeTT3()
         {
             TT[d][2].Subjects.insert(it);
             TT[d][2].strength += subjectData[it].strength;
+        }
+        for (auto it : Slots[e].Subjects)
+        {
+            TT[d][3].Subjects.insert(it);
+            TT[d][3].strength += subjectData[it].strength;
         }
         sort(TT[d].begin(), TT[d].end(),
              [](const Partition &p1, const Partition &p2)
@@ -605,11 +675,12 @@ void finalOptimization()
         for (int d1 = 0; d1 < days; d1++)
         {
             int exams = 0;
-            for (int sl = 0; sl < 3; sl++)
+            for (int sl = 0; sl < 4; sl++)
             {
                 for (auto it : TT[d1][sl].Subjects)
                 {
-                    if (studentData[i].subjectsEnrolled.count(it) > 0)
+                    // C++14: Replaced .contains() with .count()
+                    if (studentData[i].subjectsEnrolled.count(it))
                     {
                         exams++;
                         break;
@@ -620,11 +691,12 @@ void finalOptimization()
             for (int d2 = d1 + 1; d2 < days; d2++)
             {
                 int exam2 = 0;
-                for (int sl = 0; sl < 3; sl++)
+                for (int sl = 0; sl < 4; sl++)
                 {
                     for (auto it : TT[d2][sl].Subjects)
                     {
-                        if (studentData[i].subjectsEnrolled.count(it) > 0)
+                        // C++14: Replaced .contains() with .count()
+                        if (studentData[i].subjectsEnrolled.count(it))
                         {
                             exam2++;
                             break;
@@ -633,25 +705,30 @@ void finalOptimization()
                 }
 
                 int total = exams + exam2;
-                if (total == 3)
+                if (total == 4)
                 {
                     confMatrix[d1][d2] += 1;
                     confMatrix[d2][d1] += 1;
                 }
-                if (total == 4)
+                if (total == 5)
                 {
                     confMatrix[d1][d2] += 50;
                     confMatrix[d2][d1] += 50;
                 }
-                if (total == 5)
+                if (total == 6)
                 {
                     confMatrix[d1][d2] += 1000;
                     confMatrix[d2][d1] += 1000;
                 }
-                if (total == 6)
+                if (total == 7)
                 {
                     confMatrix[d1][d2] += 10000;
                     confMatrix[d2][d1] += 10000;
+                }
+                if (total == 8)
+                {
+                    confMatrix[d1][d2] += 100000;
+                    confMatrix[d2][d1] += 100000;
                 }
             }
         }
@@ -671,7 +748,7 @@ int main()
     Input(jsonData);
     outJson = jsonData;
     genrateSlots();
-    makeTT3();
+    makeTT4();
     optimizeTT();
     optimizeTT();
     finalOptimization();

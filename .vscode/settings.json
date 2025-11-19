@@ -25,6 +25,7 @@
         "initializer_list": "cpp",
         "list": "cpp",
         "valarray": "cpp",
-        "iosfwd": "cpp"
+        "iosfwd": "cpp",
+        "tuple": "cpp"
     }
 }
