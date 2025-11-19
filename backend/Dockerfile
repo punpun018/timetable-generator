@@ -19,6 +19,7 @@ COPY . .
 RUN cd cpp-files && \
     g++ -std=c++17 -O2 -o generator generator.cpp && \
     g++ -std=c++17 -O2 -o generator2 generator2.cpp && \
+    g++ -std=c++17 -O2 -o generator3 generator3.cpp && \
     g++ -std=c++17 -O2 -o checker checker.cpp && \
     g++ -std=c++17 -O2 -o checker2 checker2.cpp && \
     g++ -std=c++17 -O2 -o slot_suggester slot_suggester.cpp
